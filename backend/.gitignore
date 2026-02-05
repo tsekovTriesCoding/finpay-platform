@@ -20,3 +20,7 @@ hs_err_pid*
 replay_pid*
 
 *.pid
+
+# Environment files with secrets
+.env
+!.env.example
