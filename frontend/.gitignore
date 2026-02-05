@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+coverage/
+.nyc_output/
+
+npm-debug.log*
+
+!.vscode/extensions.json
