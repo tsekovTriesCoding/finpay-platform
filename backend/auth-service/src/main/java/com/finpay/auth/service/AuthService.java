@@ -1,13 +1,15 @@
 package com.finpay.auth.service;
 
-import com.finpay.auth.client.UserServiceClient;
 import com.finpay.auth.dto.*;
 import com.finpay.auth.entity.RefreshToken;
+import com.finpay.auth.entity.UserCredential;
+import com.finpay.auth.event.UserRegisteredEvent;
 import com.finpay.auth.exception.InvalidTokenException;
 import com.finpay.auth.exception.UserAlreadyExistsException;
+import com.finpay.auth.kafka.AuthEventProducer;
 import com.finpay.auth.repository.RefreshTokenRepository;
+import com.finpay.auth.repository.UserCredentialRepository;
 import com.finpay.auth.security.JwtService;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -18,71 +20,94 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Authentication service using local credential storage.
+ * User profile data is synced to user-service via Kafka events.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
 public class AuthService {
 
-    private final UserServiceClient userServiceClient;
+    private final UserCredentialRepository credentialRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuthEventProducer authEventProducer;
 
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering new user with email: {}", request.email());
 
         // Check if user already exists
-        if (userServiceClient.existsByEmail(request.email())) {
+        if (credentialRepository.existsByEmail(request.email())) {
             throw new UserAlreadyExistsException("User with email " + request.email() + " already exists");
         }
 
-        if (request.phoneNumber() != null && userServiceClient.existsByPhoneNumber(request.phoneNumber())) {
+        if (request.phoneNumber() != null && credentialRepository.existsByPhoneNumber(request.phoneNumber())) {
             throw new UserAlreadyExistsException("User with phone number " + request.phoneNumber() + " already exists");
         }
 
-        // Create user in user-service
+        // Create local credential
         String encodedPassword = passwordEncoder.encode(request.password());
-        CreateUserRequest createRequest = CreateUserRequest.fromRegisterRequest(request, encodedPassword);
-        
-        UserDto user = userServiceClient.createUser(createRequest);
-        log.info("User registered successfully with ID: {}", user.id());
+        UserCredential credential = UserCredential.builder()
+                .email(request.email())
+                .passwordHash(encodedPassword)
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .phoneNumber(request.phoneNumber())
+                .enabled(true)
+                .accountLocked(false)
+                .emailVerified(false)
+                .build();
 
-        return createAuthResponse(user);
+        UserCredential savedCredential = credentialRepository.save(credential);
+        log.info("User registered successfully with ID: {}", savedCredential.getId());
+
+        // Publish event for user-service to create full profile
+        UserRegisteredEvent event = UserRegisteredEvent.create(
+                savedCredential.getId(),
+                savedCredential.getEmail(),
+                savedCredential.getFirstName(),
+                savedCredential.getLastName(),
+                savedCredential.getPhoneNumber()
+        );
+        authEventProducer.publishUserRegistered(event);
+
+        return createAuthResponse(savedCredential);
     }
 
     public AuthResponse login(LoginRequest request) {
         log.info("Authenticating user with email: {}", request.email());
 
-        UserDto user;
-        try {
-            user = userServiceClient.getUserByEmail(request.email());
-        } catch (FeignException.NotFound e) {
-            log.warn("User not found for email: {}", request.email());
-            throw new BadCredentialsException("Invalid email or password");
-        }
+        UserCredential credential = credentialRepository.findByEmail(request.email())
+                .orElseThrow(() -> {
+                    log.warn("User not found for email: {}", request.email());
+                    return new BadCredentialsException("Invalid email or password");
+                });
 
         // Verify password
-        if (user.password() == null || !passwordEncoder.matches(request.password(), user.password())) {
+        if (!passwordEncoder.matches(request.password(), credential.getPasswordHash())) {
             log.warn("Invalid password for email: {}", request.email());
             throw new BadCredentialsException("Invalid email or password");
         }
 
         // Check user status
-        if ("SUSPENDED".equals(user.status())) {
-            throw new BadCredentialsException("Account is suspended");
+        if (!credential.isEnabled()) {
+            throw new BadCredentialsException("Account is disabled");
+        }
+
+        if (credential.isAccountLocked()) {
+            throw new BadCredentialsException("Account is locked");
         }
 
         // Update last login time
-        try {
-            userServiceClient.updateLastLogin(user.id());
-        } catch (Exception e) {
-            log.warn("Failed to update last login time for user: {}", user.id());
-        }
+        credential.setLastLoginAt(LocalDateTime.now());
+        credentialRepository.save(credential);
 
-        log.info("User logged in successfully: {}", user.email());
+        log.info("User logged in successfully: {}", credential.getEmail());
         
-        return createAuthResponse(user);
+        return createAuthResponse(credential);
     }
 
     public AuthResponse refreshToken(RefreshTokenRequest request) {
@@ -95,14 +120,15 @@ public class AuthService {
             throw new InvalidTokenException("Refresh token is expired or revoked");
         }
 
-        // Get user from user-service
-        UserDto user = userServiceClient.getUserById(refreshToken.getUserId());
+        // Get credential
+        UserCredential credential = credentialRepository.findById(refreshToken.getUserId())
+                .orElseThrow(() -> new InvalidTokenException("User not found"));
 
         // Revoke old refresh token
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
 
-        return createAuthResponse(user);
+        return createAuthResponse(credential);
     }
 
     public void logout(String refreshTokenValue) {
@@ -126,32 +152,56 @@ public class AuthService {
         }
         
         UUID userId = jwtService.extractUserIdAsUUID(token);
-        return userServiceClient.getUserById(userId).withoutPassword();
+        UserCredential credential = credentialRepository.findById(userId)
+                .orElseThrow(() -> new InvalidTokenException("User not found"));
+        
+        return toUserDto(credential);
     }
 
-    private AuthResponse createAuthResponse(UserDto user) {
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshTokenValue = jwtService.generateRefreshToken(user);
+    private AuthResponse createAuthResponse(UserCredential credential) {
+        UserDto userDto = toUserDto(credential);
+        
+        String accessToken = jwtService.generateAccessToken(userDto);
+        String refreshTokenValue = jwtService.generateRefreshToken(userDto);
 
         // Save refresh token
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(refreshTokenValue)
-                .userId(user.id())
-                .userEmail(user.email())
+                .userId(credential.getId())
+                .userEmail(credential.getEmail())
                 .expiryDate(LocalDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))
                 .revoked(false)
                 .build();
 
         refreshTokenRepository.save(refreshToken);
 
-        // Return user without password
-        UserDto safeUser = user.withoutPassword();
-
         return new AuthResponse(
                 accessToken,
                 refreshTokenValue,
                 jwtService.getAccessTokenExpiration(),
-                safeUser
+                userDto
+        );
+    }
+
+    private UserDto toUserDto(UserCredential credential) {
+        return new UserDto(
+                credential.getId(),
+                credential.getEmail(),
+                null,  // Never expose password
+                credential.getFirstName(),
+                credential.getLastName(),
+                credential.getPhoneNumber(),
+                credential.isEnabled() ? "ACTIVE" : "INACTIVE",
+                "USER",
+                credential.getOauthProvider(),
+                credential.getOauthProviderId(),
+                credential.getProfileImageUrl(),
+                null, null, null, null,  // Address fields - not stored in auth
+                credential.isEmailVerified(),
+                false,  // Phone verified - not tracked here
+                credential.getCreatedAt(),
+                credential.getUpdatedAt(),
+                credential.getLastLoginAt()
         );
     }
 }

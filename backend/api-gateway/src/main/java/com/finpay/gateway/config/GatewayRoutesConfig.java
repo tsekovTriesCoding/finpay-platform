@@ -54,6 +54,14 @@ public class GatewayRoutesConfig {
     }
 
     @Bean
+    public RouterFunction<ServerResponse> walletServiceRoute() {
+        return route("wallet-service")
+                .route(path("/api/v1/wallets/**"), HandlerFunctions.http())
+                .filter(lb("wallet-service"))
+                .build();
+    }
+
+    @Bean
     public RouterFunction<ServerResponse> transactionServiceRoute() {
         return route("transaction-service")
                 .route(path("/api/v1/transactions/**"), HandlerFunctions.http())

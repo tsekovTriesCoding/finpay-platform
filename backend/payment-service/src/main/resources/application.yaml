@@ -42,6 +42,10 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
+# Wallet Service Client Configuration
+wallet-service:
+  url: http://wallet-service
+
 eureka:
   client:
     service-url:

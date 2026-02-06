@@ -1,5 +1,5 @@
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
 import { 
   Wallet, 
   ArrowUpRight, 
@@ -8,29 +8,83 @@ import {
   TrendingUp,
   Settings,
   LogOut,
-  User
+  User,
+  RefreshCw
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+
+import { useAuth } from '../contexts/AuthContext';
+import { paymentService, walletService, Wallet as WalletType, MoneyTransfer } from '../api';
+import { SendMoneyModal } from '../components/payments';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [wallet, setWallet] = useState<WalletType | null>(null);
+  const [isLoadingWallet, setIsLoadingWallet] = useState(true);
+  const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
+  const [recentTransfers, setRecentTransfers] = useState<MoneyTransfer[]>([]);
+
+  const loadWallet = useCallback(async () => {
+    if (!user?.id) return;
+    setIsLoadingWallet(true);
+    try {
+      const walletData = await walletService.getWallet(user.id);
+      setWallet(walletData);
+    } catch (err) {
+      console.error('Error loading wallet:', err);
+    } finally {
+      setIsLoadingWallet(false);
+    }
+  }, [user?.id]);
+
+  const loadRecentTransfers = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const response = await paymentService.getTransferHistory(user.id, 0, 5);
+      setRecentTransfers(response.content);
+    } catch (err) {
+      console.error('Error loading transfers:', err);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadWallet();
+      loadRecentTransfers();
+    }
+  }, [user?.id, loadWallet, loadRecentTransfers]);
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
 
+  const handleSendMoney = () => {
+    setIsSendMoneyOpen(true);
+  };
+
+  const handleTransferComplete = (_transfer: MoneyTransfer) => {
+    loadWallet();
+    loadRecentTransfers();
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
   const quickActions = [
-    { icon: ArrowUpRight, label: 'Send Money', color: 'bg-blue-500' },
-    { icon: ArrowDownLeft, label: 'Request Money', color: 'bg-green-500' },
-    { icon: CreditCard, label: 'Pay Bills', color: 'bg-purple-500' },
-    { icon: TrendingUp, label: 'Investments', color: 'bg-orange-500' },
+    { icon: ArrowUpRight, label: 'Send Money', color: 'bg-blue-500', onClick: handleSendMoney },
+    { icon: ArrowDownLeft, label: 'Request Money', color: 'bg-green-500', onClick: () => {} },
+    { icon: CreditCard, label: 'Pay Bills', color: 'bg-purple-500', onClick: () => {} },
+    { icon: TrendingUp, label: 'Investments', color: 'bg-orange-500', onClick: () => {} },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -70,9 +124,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -84,24 +136,46 @@ export default function DashboardPage() {
           <p className="text-gray-500">Here's your financial overview</p>
         </motion.div>
 
-        {/* Balance Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-6 text-white mb-8"
         >
-          <div className="flex items-center gap-3 mb-4">
-            <Wallet className="w-6 h-6" />
-            <span className="text-blue-100">Total Balance</span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Wallet className="w-6 h-6" />
+              <span className="text-blue-100">Available Balance</span>
+            </div>
+            <button
+              onClick={loadWallet}
+              disabled={isLoadingWallet}
+              className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors disabled:opacity-50"
+              title="Refresh balance"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoadingWallet ? 'animate-spin' : ''}`} />
+            </button>
           </div>
-          <p className="text-4xl font-bold mb-2">$12,450.00</p>
-          <p className="text-blue-100 text-sm">
-            <span className="text-green-300">+$1,234.00</span> this month
-          </p>
+          {isLoadingWallet ? (
+            <div className="h-12 flex items-center">
+              <div className="w-48 h-8 bg-white/20 rounded animate-pulse" />
+            </div>
+          ) : wallet ? (
+            <>
+              <p className="text-4xl font-bold mb-2">
+                {formatCurrency(wallet.availableBalance)}
+              </p>
+              {wallet.reservedBalance > 0 && (
+                <p className="text-blue-200 text-sm">
+                  {formatCurrency(wallet.reservedBalance)} reserved for pending transfers
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-2xl font-bold mb-2">--</p>
+          )}
         </motion.div>
 
-        {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -113,7 +187,8 @@ export default function DashboardPage() {
             {quickActions.map((action, index) => (
               <button
                 key={index}
-                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow text-center"
+                onClick={action.onClick}
+                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] text-center"
               >
                 <div className={`w-12 h-12 ${action.color} rounded-full flex items-center justify-center mx-auto mb-3`}>
                   <action.icon className="w-6 h-6 text-white" />
@@ -124,7 +199,67 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Account Status */}
+        {/* Recent Transfers */}
+        {recentTransfers.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="bg-white rounded-xl p-6 shadow-sm mb-8"
+          >
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Transfers</h2>
+            <div className="space-y-3">
+              {recentTransfers.map((transfer) => (
+                <div 
+                  key={transfer.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      transfer.senderUserId === user?.id 
+                        ? 'bg-red-100' 
+                        : 'bg-green-100'
+                    }`}>
+                      {transfer.senderUserId === user?.id ? (
+                        <ArrowUpRight className="w-5 h-5 text-red-600" />
+                      ) : (
+                        <ArrowDownLeft className="w-5 h-5 text-green-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {transfer.senderUserId === user?.id ? 'Sent' : 'Received'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {transfer.description || transfer.transactionReference}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-semibold ${
+                      transfer.senderUserId === user?.id 
+                        ? 'text-red-600' 
+                        : 'text-green-600'
+                    }`}>
+                      {transfer.senderUserId === user?.id ? '-' : '+'}
+                      {formatCurrency(transfer.amount)}
+                    </p>
+                    <p className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block ${
+                      transfer.status === 'COMPLETED' 
+                        ? 'bg-green-100 text-green-700'
+                        : transfer.status === 'FAILED' || transfer.status === 'COMPENSATED'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {transfer.status}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -167,7 +302,6 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Back Home Link */}
         <div className="mt-8 text-center">
           <Link 
             to="/"
@@ -177,6 +311,16 @@ export default function DashboardPage() {
           </Link>
         </div>
       </main>
+
+      {/* Send Money Modal */}
+      {user?.id && (
+        <SendMoneyModal
+          isOpen={isSendMoneyOpen}
+          onClose={() => setIsSendMoneyOpen(false)}
+          userId={user.id}
+          onTransferComplete={handleTransferComplete}
+        />
+      )}
     </div>
   );
 }

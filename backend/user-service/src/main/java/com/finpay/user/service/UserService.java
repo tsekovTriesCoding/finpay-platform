@@ -3,6 +3,7 @@ package com.finpay.user.service;
 import com.finpay.user.dto.CreateUserRequest;
 import com.finpay.user.dto.UserRequest;
 import com.finpay.user.dto.UserResponse;
+import com.finpay.user.dto.UserSearchResponse;
 import com.finpay.user.entity.User;
 import com.finpay.user.event.UserEvent;
 import com.finpay.user.exception.ResourceNotFoundException;
@@ -11,6 +12,9 @@ import com.finpay.user.mapper.UserMapper;
 import com.finpay.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,6 +76,23 @@ public class UserService {
         return userRepository.findAll().stream()
                 .map(userMapper::toResponse)
                 .toList();
+    }
+
+    /**
+     * Search users by name or email for money transfer recipient selection.
+     * Excludes the current user from results.
+     */
+    @Transactional(readOnly = true)
+    public Page<UserSearchResponse> searchUsers(String searchTerm, UUID excludeUserId, int page, int size) {
+        log.debug("Searching users with term: '{}', excluding user: {}", searchTerm, excludeUserId);
+        
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return Page.empty();
+        }
+        
+        Pageable pageable = PageRequest.of(page, Math.min(size, 10)); // Max 10 results
+        return userRepository.searchUsers(searchTerm.trim(), excludeUserId, pageable)
+                .map(UserSearchResponse::fromEntity);
     }
 
     public UserResponse updateUser(UUID id, UserRequest request) {

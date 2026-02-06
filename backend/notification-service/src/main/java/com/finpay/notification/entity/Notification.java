@@ -71,6 +71,8 @@ public class Notification {
         PAYMENT_COMPLETED,
         PAYMENT_FAILED,
         PAYMENT_REFUNDED,
+        TRANSFER_SENT,
+        TRANSFER_RECEIVED,
         ACCOUNT_UPDATE,
         SECURITY_ALERT,
         PROMOTIONAL,
