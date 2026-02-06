@@ -1,12 +1,13 @@
 package com.finpay.auth.security;
 
-import com.finpay.auth.client.UserServiceClient;
-import com.finpay.auth.dto.CreateUserRequest;
 import com.finpay.auth.dto.UserDto;
 import com.finpay.auth.entity.RefreshToken;
+import com.finpay.auth.entity.UserCredential;
+import com.finpay.auth.event.UserRegisteredEvent;
+import com.finpay.auth.kafka.AuthEventProducer;
 import com.finpay.auth.repository.RefreshTokenRepository;
+import com.finpay.auth.repository.UserCredentialRepository;
 import com.finpay.auth.service.CookieService;
-import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -28,9 +30,10 @@ import java.util.Map;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtService jwtService;
-    private final UserServiceClient userServiceClient;
+    private final UserCredentialRepository credentialRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CookieService cookieService;
+    private final AuthEventProducer authEventProducer;
 
     @Value("${oauth2.redirect-uri:http://localhost:5173/oauth2/callback}")
     private String frontendRedirectUri;
@@ -46,7 +49,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             OAuth2User oAuth2User = oAuth2Token.getPrincipal();
             String provider = oAuth2Token.getAuthorizedClientRegistrationId();
             
-            UserDto user = processOAuth2User(oAuth2User, provider);
+            UserCredential credential = processOAuth2User(oAuth2User, provider);
+            UserDto user = toUserDto(credential);
             
             String accessToken = jwtService.generateAccessToken(user);
             String refreshTokenValue = jwtService.generateRefreshToken(user);
@@ -71,7 +75,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         }
     }
 
-    private UserDto processOAuth2User(OAuth2User oAuth2User, String provider) {
+    private UserCredential processOAuth2User(OAuth2User oAuth2User, String provider) {
         Map<String, Object> attributes = oAuth2User.getAttributes();
         
         String email = extractEmail(attributes, provider);
@@ -82,28 +86,77 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         
         String authProvider = provider.toUpperCase();
         
-        try {
-            // Try to get existing user
-            UserDto existingUser = userServiceClient.getUserByEmail(email);
+        Optional<UserCredential> existingCredential = credentialRepository.findByEmail(email);
+        
+        if (existingCredential.isPresent()) {
+            UserCredential credential = existingCredential.get();
             
-            // Update OAuth info if needed
-            if (existingUser.authProvider() == null || "LOCAL".equals(existingUser.authProvider())) {
-                return userServiceClient.linkOAuthProvider(
-                        existingUser.id(), 
-                        authProvider, 
-                        providerId, 
-                        profileImageUrl
-                );
+            // Link OAuth provider if user was registered locally
+            if (credential.getOauthProvider() == null) {
+                credential.setOauthProvider(authProvider);
+                credential.setOauthProviderId(providerId);
+                credential.setProfileImageUrl(profileImageUrl);
+                credential.setLastLoginAt(LocalDateTime.now());
+                return credentialRepository.save(credential);
             }
-            return existingUser;
             
-        } catch (FeignException.NotFound e) {
-            // Create new user
-            CreateUserRequest createRequest = CreateUserRequest.forOAuth2User(
-                    email, firstName, lastName, authProvider, providerId, profileImageUrl
-            );
-            return userServiceClient.createUser(createRequest);
+            // Update last login
+            credential.setLastLoginAt(LocalDateTime.now());
+            return credentialRepository.save(credential);
         }
+        
+        // Create new credential for OAuth user
+        UserCredential newCredential = UserCredential.builder()
+                .email(email)
+                .firstName(firstName)
+                .lastName(lastName)
+                .oauthProvider(authProvider)
+                .oauthProviderId(providerId)
+                .profileImageUrl(profileImageUrl)
+                .enabled(true)
+                .emailVerified(true)  // OAuth emails are verified
+                .accountLocked(false)
+                .lastLoginAt(LocalDateTime.now())
+                .build();
+        
+        UserCredential savedCredential = credentialRepository.save(newCredential);
+        log.info("New OAuth user registered with ID: {}", savedCredential.getId());
+        
+        // Publish event for user-service
+        UserRegisteredEvent event = UserRegisteredEvent.createOAuth(
+                savedCredential.getId(),
+                savedCredential.getEmail(),
+                savedCredential.getFirstName(),
+                savedCredential.getLastName(),
+                authProvider,
+                providerId,
+                profileImageUrl
+        );
+        authEventProducer.publishUserRegistered(event);
+        
+        return savedCredential;
+    }
+
+    private UserDto toUserDto(UserCredential credential) {
+        return new UserDto(
+                credential.getId(),
+                credential.getEmail(),
+                null,
+                credential.getFirstName(),
+                credential.getLastName(),
+                credential.getPhoneNumber(),
+                credential.isEnabled() ? "ACTIVE" : "INACTIVE",
+                "USER",
+                credential.getOauthProvider(),
+                credential.getOauthProviderId(),
+                credential.getProfileImageUrl(),
+                null, null, null, null,
+                credential.isEmailVerified(),
+                false,
+                credential.getCreatedAt(),
+                credential.getUpdatedAt(),
+                credential.getLastLoginAt()
+        );
     }
 
     private String extractEmail(Map<String, Object> attributes, String provider) {

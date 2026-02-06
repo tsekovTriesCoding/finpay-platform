@@ -75,14 +75,12 @@ eureka:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${random.uuid}
 
-# Feign client configuration
-feign:
-  client:
-    config:
-      default:
-        connectTimeout: 5000
-        readTimeout: 5000
-        loggerLevel: basic
+# Kafka Configuration
+spring.kafka:
+  bootstrap-servers: localhost:9092
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 management:
   endpoints:

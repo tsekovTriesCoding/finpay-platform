@@ -2,10 +2,12 @@ package com.finpay.user.controller;
 
 import com.finpay.user.dto.UserRequest;
 import com.finpay.user.dto.UserResponse;
+import com.finpay.user.dto.UserSearchResponse;
 import com.finpay.user.entity.User;
 import com.finpay.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +43,20 @@ public class UserController {
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<UserResponse> response = userService.getAllUsers();
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Search users by name or email for transfer recipient selection.
+     * Excludes the requesting user from results.
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Page<UserSearchResponse>> searchUsers(
+            @RequestParam String query,
+            @RequestParam UUID excludeUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        Page<UserSearchResponse> response = userService.searchUsers(query, excludeUserId, page, size);
         return ResponseEntity.ok(response);
     }
 
