@@ -34,8 +34,8 @@ export interface User {
 }
 
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
+  accessToken: string | null;
+  refreshToken: string | null;
   tokenType: string;
   expiresIn: number;
   user: User;
@@ -52,13 +52,15 @@ export const authService = {
     return response.data;
   },
 
-  refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/api/v1/auth/refresh', { refreshToken });
+  refreshToken: async (): Promise<AuthResponse> => {
+    // Refresh token is sent automatically via HTTP-only cookie
+    const response = await api.post<AuthResponse>('/api/v1/auth/refresh');
     return response.data;
   },
 
-  logout: async (refreshToken: string): Promise<void> => {
-    await api.post('/api/v1/auth/logout', { refreshToken });
+  logout: async (): Promise<void> => {
+    // Refresh token is sent automatically via HTTP-only cookie
+    await api.post('/api/v1/auth/logout');
   },
 
   logoutAll: async (): Promise<void> => {

@@ -59,6 +59,12 @@ jwt:
 oauth2:
   redirect-uri: ${OAUTH2_REDIRECT_URI}
 
+# Cookie Configuration for HTTP-only JWT tokens
+cookie:
+  domain: ${COOKIE_DOMAIN}
+  secure: ${COOKIE_SECURE}
+  same-site: ${COOKIE_SAME_SITE}
+
 eureka:
   client:
     service-url:

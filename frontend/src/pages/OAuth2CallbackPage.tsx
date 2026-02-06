@@ -13,8 +13,6 @@ export default function OAuth2CallbackPage() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      const token = searchParams.get('token');
-      const refreshToken = searchParams.get('refreshToken');
       const error = searchParams.get('error');
 
       if (error) {
@@ -23,29 +21,21 @@ export default function OAuth2CallbackPage() {
         return;
       }
 
-      if (token && refreshToken) {
-        try {
-          // Store tokens
-          localStorage.setItem('accessToken', token);
-          localStorage.setItem('refreshToken', refreshToken);
+      try {
+        // With HTTP-only cookies, tokens are already set by the backend redirect
+        // Just fetch user data to verify the session and store user info locally
+        const user = await authService.getCurrentUser();
+        localStorage.setItem('user', JSON.stringify(user));
 
-          // Fetch user data
-          const user = await authService.getCurrentUser();
-          localStorage.setItem('user', JSON.stringify(user));
-
-          setStatus('success');
-          
-          // Navigate to dashboard after a brief delay
-          setTimeout(() => {
-            navigate('/dashboard', { replace: true });
-          }, 1500);
-        } catch {
-          setStatus('error');
-          setErrorMessage('Failed to complete authentication');
-        }
-      } else {
+        setStatus('success');
+        
+        // Navigate to dashboard after a brief delay
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 1500);
+      } catch {
         setStatus('error');
-        setErrorMessage('Missing authentication tokens');
+        setErrorMessage('Failed to complete authentication');
       }
     };
 

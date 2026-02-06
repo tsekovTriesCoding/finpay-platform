@@ -1,4 +1,4 @@
-import axios, { InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 
 // API Gateway URL - single entry point for all services
 export const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080';
@@ -9,22 +9,9 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Credentials must be true for cookies to be sent/received
   withCredentials: true,
 });
-
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Response interceptor for token refresh
 api.interceptors.response.use(
@@ -37,25 +24,15 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          // Use the gateway for refresh token endpoint
-          const response = await axios.post(`${API_GATEWAY_URL}/api/v1/auth/refresh`, {
-            refreshToken,
-          });
+        // Attempt to refresh token via HTTP-only cookie (no token in request body needed)
+        await axios.post(`${API_GATEWAY_URL}/api/v1/auth/refresh`, {}, {
+          withCredentials: true,
+        });
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
-          
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', newRefreshToken);
-
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
-        }
+        // Retry the original request - cookies will be automatically sent
+        return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        // Refresh failed, clear user data and redirect to login
         localStorage.removeItem('user');
         window.location.href = '/login';
         return Promise.reject(refreshError);

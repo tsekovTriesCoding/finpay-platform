@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+
 import { authService, type User, type RegisterData, type LoginData, type AuthResponse } from '../api';
 
 interface AuthContextType {
@@ -23,15 +24,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const setAuthData = useCallback((response: AuthResponse) => {
-    localStorage.setItem('accessToken', response.accessToken);
-    localStorage.setItem('refreshToken', response.refreshToken);
+    // Only store user info locally (tokens are in HTTP-only cookies)
     localStorage.setItem('user', JSON.stringify(response.user));
     setUser(response.user);
   }, []);
 
   const clearAuthData = useCallback(() => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    // Clear user data (cookies are cleared server-side on logout)
     localStorage.removeItem('user');
     setUser(null);
   }, []);
@@ -39,17 +38,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Initialize auth state on mount
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('accessToken');
       const storedUser = localStorage.getItem('user');
 
-      if (token && storedUser) {
+      if (storedUser) {
         try {
-          // Verify the token by fetching current user
+          // Verify the session by fetching current user (cookies sent automatically)
           const currentUser = await authService.getCurrentUser();
           setUser(currentUser);
           localStorage.setItem('user', JSON.stringify(currentUser));
         } catch {
-          // Token is invalid, clear auth data
+          // Session is invalid, clear auth data
           clearAuthData();
         }
       }
@@ -71,10 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        await authService.logout(refreshToken);
-      }
+      await authService.logout();
     } finally {
       clearAuthData();
     }
