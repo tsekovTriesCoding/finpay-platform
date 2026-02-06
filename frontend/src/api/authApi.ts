@@ -1,4 +1,4 @@
-import { authApi as api, AUTH_API_URL } from './axios';
+import api, { API_GATEWAY_URL } from './axios';
 
 export interface RegisterData {
   email: string;
@@ -70,12 +70,13 @@ export const authService = {
     return response.data;
   },
 
+  // OAuth URLs go through API Gateway which routes to auth-service
   getGoogleLoginUrl: (): string => {
-    return `${AUTH_API_URL}/oauth2/authorization/google`;
+    return `${API_GATEWAY_URL}/oauth2/authorization/google`;
   },
 
   getGithubLoginUrl: (): string => {
-    return `${AUTH_API_URL}/oauth2/authorization/github`;
+    return `${API_GATEWAY_URL}/oauth2/authorization/github`;
   },
 };
 
