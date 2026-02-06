@@ -5,6 +5,7 @@ import com.finpay.auth.dto.CreateUserRequest;
 import com.finpay.auth.dto.UserDto;
 import com.finpay.auth.entity.RefreshToken;
 import com.finpay.auth.repository.RefreshTokenRepository;
+import com.finpay.auth.service.CookieService;
 import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,7 +17,6 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -30,6 +30,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtService jwtService;
     private final UserServiceClient userServiceClient;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final CookieService cookieService;
 
     @Value("${oauth2.redirect-uri:http://localhost:5173/oauth2/callback}")
     private String frontendRedirectUri;
@@ -60,14 +61,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     .build();
             refreshTokenRepository.save(refreshToken);
             
-            String redirectUrl = UriComponentsBuilder.fromUriString(frontendRedirectUri)
-                    .queryParam("token", accessToken)
-                    .queryParam("refreshToken", refreshTokenValue)
-                    .build().toUriString();
+            // Set HTTP-only cookies instead of passing tokens in URL
+            cookieService.setAuthCookies(response, accessToken, refreshTokenValue);
             
             log.info("OAuth2 login successful for user: {}", user.email());
             
-            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+            // Redirect without tokens in URL (cookies are set)
+            getRedirectStrategy().sendRedirect(request, response, frontendRedirectUri);
         }
     }
 
