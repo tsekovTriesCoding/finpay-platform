@@ -4,8 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.user.config.KafkaConfig;
 import com.finpay.user.entity.User;
+import com.finpay.user.event.UserEvent;
 import com.finpay.user.event.UserRegisteredEvent;
+import com.finpay.user.mapper.UserMapper;
 import com.finpay.user.repository.UserRepository;
+import com.finpay.user.service.UserEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Consumes user registration events from auth-service.
  * Creates full user profiles when users register via auth-service.
+ * Publishes USER_CREATED events for wallet-service to create wallets automatically.
  */
 @Component
 @RequiredArgsConstructor
@@ -22,15 +26,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthEventConsumer {
 
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper kafkaObjectMapper;
+    private final UserEventProducer userEventProducer;
+    private final UserMapper userMapper;
 
     @KafkaListener(topics = KafkaConfig.AUTH_EVENTS_TOPIC, groupId = "user-service-group")
     @Transactional
     public void handleAuthEvent(String message) {
-        log.debug("Received auth event: {}", message);
+        log.info("Received auth event: {}", message);
         
         try {
-            UserRegisteredEvent event = objectMapper.readValue(message, UserRegisteredEvent.class);
+            UserRegisteredEvent event = kafkaObjectMapper.readValue(message, UserRegisteredEvent.class);
             handleUserRegistered(event);
         } catch (JsonProcessingException e) {
             log.error("Failed to deserialize auth event: {}", message, e);
@@ -80,5 +86,10 @@ public class AuthEventConsumer {
         
         User savedUser = userRepository.save(user);
         log.info("Created user profile for: {} with ID: {}", savedUser.getEmail(), savedUser.getId());
+        
+        // Publish USER_CREATED event for wallet-service to create wallet automatically
+        UserEvent userEvent = userMapper.toEvent(savedUser, UserEvent.EventType.USER_CREATED);
+        userEventProducer.sendUserEvent(userEvent);
+        log.info("Published USER_CREATED event for user: {}", savedUser.getId());
     }
 }

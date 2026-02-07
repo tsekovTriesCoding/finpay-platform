@@ -26,20 +26,11 @@ public class WalletController {
     private final WalletTransactionService transactionService;
 
     /**
-     * Get or create wallet for a user.
-     * Creates a wallet with default balance for demo purposes.
+     * Get wallet for a user.
+     * Wallet must be created via Kafka events during user registration.
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<WalletResponse> getOrCreateWallet(@PathVariable UUID userId) {
-        WalletResponse response = walletService.getOrCreateWallet(userId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Get wallet by user ID (throws if not found).
-     */
-    @GetMapping("/user/{userId}/details")
-    public ResponseEntity<WalletResponse> getWalletByUserId(@PathVariable UUID userId) {
+    public ResponseEntity<WalletResponse> getWalletForUser(@PathVariable UUID userId) {
         WalletResponse response = walletService.getWalletByUserId(userId);
         return ResponseEntity.ok(response);
     }
