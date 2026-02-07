@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 
 import UserSearch from './UserSearch';
-import { paymentService, walletService, UserSearchResult, Wallet, MoneyTransfer } from '../../api';
+import { UserSearchResult, MoneyTransfer } from '../../api';
+import { useWallet, useSendMoney } from '../../hooks';
 
 interface SendMoneyModalProps {
   isOpen: boolean;
@@ -32,29 +33,11 @@ export default function SendMoneyModal({
   const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transfer, setTransfer] = useState<MoneyTransfer | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoadingWallet, setIsLoadingWallet] = useState(true);
 
-  const loadWallet = useCallback(async () => {
-    setIsLoadingWallet(true);
-    try {
-      const walletData = await walletService.getWallet(userId);
-      setWallet(walletData);
-    } catch (err) {
-      console.error('Error loading wallet:', err);
-      setError('Failed to load wallet');
-    } finally {
-      setIsLoadingWallet(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    if (isOpen && userId) {
-      loadWallet();
-    }
-  }, [isOpen, userId, loadWallet]);
+  const { data: wallet, isLoading: isLoadingWallet } = useWallet(isOpen ? userId : undefined);
+  const sendMoney = useSendMoney(userId);
 
   useEffect(() => {
     if (!isOpen) {
@@ -121,34 +104,41 @@ export default function SendMoneyModal({
     setStep('processing');
     setError(null);
 
-    try {
-      const transferResult = await paymentService.sendMoney(userId, {
+    sendMoney.mutate(
+      {
         recipientUserId: selectedUser.id,
         amount: parseFloat(amount),
         currency: 'USD',
         description: description || undefined,
-      });
+      },
+      {
+        onSuccess: (transferResult) => {
+          setTransfer(transferResult);
 
-      setTransfer(transferResult);
-
-      if (transferResult.status === 'COMPLETED') {
-        setStep('success');
-        onTransferComplete?.(transferResult);
-      } else if (transferResult.status === 'FAILED' || 
-                 transferResult.status === 'COMPENSATED') {
-        setError(transferResult.failureReason || 'Transfer failed');
-        setStep('error');
-      } else {
-        setStep('success');
-        onTransferComplete?.(transferResult);
-      }
-    } catch (err) {
-      console.error('Transfer error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Transfer failed. Please try again.';
-      const apiError = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(apiError || errorMessage);
-      setStep('error');
-    }
+          if (transferResult.status === 'COMPLETED') {
+            setStep('success');
+            onTransferComplete?.(transferResult);
+          } else if (
+            transferResult.status === 'FAILED' ||
+            transferResult.status === 'COMPENSATED'
+          ) {
+            setError(transferResult.failureReason || 'Transfer failed');
+            setStep('error');
+          } else {
+            // PROCESSING status — the saga is running asynchronously
+            setStep('success');
+            onTransferComplete?.(transferResult);
+          }
+        },
+        onError: (err) => {
+          console.error('Transfer error:', err);
+          const apiError = (err as { response?: { data?: { message?: string } } })?.response?.data
+            ?.message;
+          setError(apiError || err.message || 'Transfer failed. Please try again.');
+          setStep('error');
+        },
+      },
+    );
   };
 
   const handleClose = () => {

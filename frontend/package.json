@@ -12,6 +12,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.20",
     "axios": "^1.7.9",
     "framer-motion": "^11.18.0",
     "lucide-react": "^0.475.0",
