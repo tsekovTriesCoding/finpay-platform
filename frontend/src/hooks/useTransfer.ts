@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 
 import { paymentService, MoneyTransfer, MoneyTransferRequest } from '../api';
 import { walletKeys } from './useWallet';
@@ -11,13 +12,39 @@ export const transferKeys = {
 
 /**
  * Fetch recent transfer history for a user.
+ * Smart polling: only refetches every 5 s while there are PROCESSING transfers.
+ * Once all transfers settle (COMPLETED / FAILED), polling stops - zero overhead.
+ * Automatically refreshes the wallet balance when a transfer completes.
  */
 export function useTransferHistory(userId: string | undefined, page = 0, size = 5) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const prevActiveRef = useRef(false);
+
+  const query = useQuery({
     queryKey: [...transferKeys.user(userId!), page, size],
     queryFn: () => paymentService.getTransferHistory(userId!, page, size),
     enabled: !!userId,
+    refetchInterval: (q) => {
+      const hasActive = q.state.data?.content?.some(
+        (t: MoneyTransfer) => t.status === 'PROCESSING' || t.status === 'PENDING'
+      );
+      return hasActive ? 5_000 : false;
+    },
   });
+
+  // When transfers transition from active → settled, refresh the wallet balance
+  const hasActive = query.data?.content?.some(
+    (t) => t.status === 'PROCESSING' || t.status === 'PENDING'
+  ) ?? false;
+
+  useEffect(() => {
+    if (prevActiveRef.current && !hasActive && userId) {
+      queryClient.invalidateQueries({ queryKey: walletKeys.user(userId) });
+    }
+    prevActiveRef.current = hasActive;
+  }, [hasActive, userId, queryClient]);
+
+  return query;
 }
 
 /**

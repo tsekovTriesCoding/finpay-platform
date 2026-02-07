@@ -8,6 +8,10 @@ export type {
   UserSearchResponse, 
   MoneyTransferRequest, 
   MoneyTransfer, 
-  TransferHistoryResponse 
+  TransferHistoryResponse,
+  MoneyRequestStatus,
+  MoneyRequestCreatePayload,
+  MoneyRequest,
+  MoneyRequestPageResponse,
 } from './paymentApi';
 export type { Wallet } from './walletApi';

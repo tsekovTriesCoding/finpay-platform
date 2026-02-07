@@ -26,6 +26,7 @@ public class KafkaConfig {
     public static final String TRANSFER_NOTIFICATION_TOPIC = "transfer-notifications";
     public static final String WALLET_COMMANDS_TOPIC = "wallet-commands";
     public static final String WALLET_EVENTS_TOPIC = "wallet-events";
+    public static final String MONEY_REQUEST_EVENTS_TOPIC = "money-request-events";
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
@@ -112,6 +113,14 @@ public class KafkaConfig {
     @Bean
     public NewTopic walletEventsTopic() {
         return TopicBuilder.name(WALLET_EVENTS_TOPIC)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic moneyRequestEventsTopic() {
+        return TopicBuilder.name(MONEY_REQUEST_EVENTS_TOPIC)
                 .partitions(3)
                 .replicas(1)
                 .build();

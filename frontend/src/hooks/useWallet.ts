@@ -32,7 +32,7 @@ export function useWallet(userId: string | undefined) {
 }
 
 /**
- * Deposit funds into a wallet — invalidates the wallet cache on success.
+ * Deposit funds into a wallet - invalidates the wallet cache on success.
  */
 export function useDeposit() {
   const queryClient = useQueryClient();

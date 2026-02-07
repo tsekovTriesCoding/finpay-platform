@@ -16,12 +16,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { MoneyTransfer } from '../api';
 import { useWallet, useTransferHistory } from '../hooks';
-import { SendMoneyModal } from '../components/payments';
+import { SendMoneyModal, RequestMoneyModal, PendingRequestsPanel } from '../components/payments';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
+  const [isRequestMoneyOpen, setIsRequestMoneyOpen] = useState(false);
 
   const {
     data: wallet,
@@ -45,7 +46,16 @@ export default function DashboardPage() {
     setIsSendMoneyOpen(true);
   };
 
+  const handleRequestMoney = () => {
+    setIsRequestMoneyOpen(true);
+  };
+
   const handleTransferComplete = (_transfer: MoneyTransfer) => {
+    refetchWallet();
+    refetchTransfers();
+  };
+
+  const handleRequestActioned = () => {
     refetchWallet();
     refetchTransfers();
   };
@@ -59,7 +69,7 @@ export default function DashboardPage() {
 
   const quickActions = [
     { icon: ArrowUpRight, label: 'Send Money', color: 'bg-blue-500', onClick: handleSendMoney },
-    { icon: ArrowDownLeft, label: 'Request Money', color: 'bg-green-500', onClick: () => {} },
+    { icon: ArrowDownLeft, label: 'Request Money', color: 'bg-green-500', onClick: handleRequestMoney },
     { icon: CreditCard, label: 'Pay Bills', color: 'bg-purple-500', onClick: () => {} },
     { icon: TrendingUp, label: 'Investments', color: 'bg-orange-500', onClick: () => {} },
   ];
@@ -180,6 +190,13 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
+        {user?.id && (
+          <PendingRequestsPanel
+            userId={user.id}
+            onRequestActioned={handleRequestActioned}
+          />
+        )}
+
         {recentTransfers.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -189,53 +206,52 @@ export default function DashboardPage() {
           >
             <h2 className="text-lg font-semibold text-white mb-4">Recent Transfers</h2>
             <div className="space-y-3">
-              {recentTransfers.map((transfer) => (
-                <div 
-                  key={transfer.id}
-                  className="flex items-center justify-between p-3 bg-dark-800/50 rounded-lg border border-dark-700/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      transfer.senderUserId === user?.id 
-                        ? 'bg-red-500/20' 
-                        : 'bg-secondary-500/20'
-                    }`}>
-                      {transfer.senderUserId === user?.id ? (
-                        <ArrowUpRight className="w-5 h-5 text-red-400" />
-                      ) : (
-                        <ArrowDownLeft className="w-5 h-5 text-secondary-400" />
-                      )}
+              {recentTransfers.map((transfer) => {
+                const isSent = transfer.senderUserId === user?.id;
+                return (
+                  <div 
+                    key={transfer.id}
+                    className="flex items-center justify-between p-3 bg-dark-800/50 rounded-lg border border-dark-700/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        isSent ? 'bg-red-500/20' : 'bg-secondary-500/20'
+                      }`}>
+                        {isSent ? (
+                          <ArrowUpRight className="w-5 h-5 text-red-400" />
+                        ) : (
+                          <ArrowDownLeft className="w-5 h-5 text-secondary-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">
+                          {isSent ? 'Sent' : 'Received'}
+                        </p>
+                        <p className="text-sm text-dark-400">
+                          {transfer.description || transfer.transactionReference}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-white">
-                        {transfer.senderUserId === user?.id ? 'Sent' : 'Received'}
+                    <div className="text-right">
+                      <p className={`font-semibold ${
+                        isSent ? 'text-red-400' : 'text-secondary-400'
+                      }`}>
+                        {isSent ? '-' : '+'}
+                        {formatCurrency(transfer.amount)}
                       </p>
-                      <p className="text-sm text-dark-400">
-                        {transfer.description || transfer.transactionReference}
+                      <p className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block ${
+                        transfer.status === 'COMPLETED' 
+                          ? 'bg-secondary-500/20 text-secondary-400'
+                          : transfer.status === 'FAILED' || transfer.status === 'COMPENSATED'
+                          ? 'bg-red-500/20 text-red-400'
+                          : 'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {transfer.status}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`font-semibold ${
-                      transfer.senderUserId === user?.id 
-                        ? 'text-red-400' 
-                        : 'text-secondary-400'
-                    }`}>
-                      {transfer.senderUserId === user?.id ? '-' : '+'}
-                      {formatCurrency(transfer.amount)}
-                    </p>
-                    <p className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block ${
-                      transfer.status === 'COMPLETED' 
-                        ? 'bg-secondary-500/20 text-secondary-400'
-                        : transfer.status === 'FAILED' || transfer.status === 'COMPENSATED'
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-yellow-500/20 text-yellow-400'
-                    }`}>
-                      {transfer.status}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}
@@ -298,6 +314,18 @@ export default function DashboardPage() {
           onClose={() => setIsSendMoneyOpen(false)}
           userId={user.id}
           onTransferComplete={handleTransferComplete}
+        />
+      )}
+
+      {user?.id && (
+        <RequestMoneyModal
+          isOpen={isRequestMoneyOpen}
+          onClose={() => setIsRequestMoneyOpen(false)}
+          userId={user.id}
+          onRequestCreated={() => {
+            refetchWallet();
+            refetchTransfers();
+          }}
         />
       )}
     </div>
