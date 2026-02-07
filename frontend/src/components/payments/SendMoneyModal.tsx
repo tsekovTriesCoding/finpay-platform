@@ -63,7 +63,6 @@ export default function SendMoneyModal({
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow numbers and decimal point
     if (/^\d*\.?\d{0,2}$/.test(value) || value === '') {
       setAmount(value);
       setError(null);
@@ -125,7 +124,6 @@ export default function SendMoneyModal({
             setError(transferResult.failureReason || 'Transfer failed');
             setStep('error');
           } else {
-            // PROCESSING status - the saga is running asynchronously
             setStep('success');
             onTransferComplete?.(transferResult);
           }

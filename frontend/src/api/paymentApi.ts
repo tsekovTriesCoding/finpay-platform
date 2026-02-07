@@ -47,7 +47,7 @@ export interface TransferHistoryResponse {
   number: number;
 }
 
-// ─── Money Request types ──────────────────────────────────────
+// Money Request types
 
 export type MoneyRequestStatus =
   | 'PENDING_APPROVAL'
@@ -140,7 +140,7 @@ export const paymentService = {
     return response.data;
   },
 
-  // ─── Money Request endpoints ──────────────────────────────────
+  // Money Request endpoints
 
   /**
    * Create a money request (authenticated user = requester).

@@ -47,9 +47,7 @@ public class MoneyRequestService {
     private final TransferSagaEventProducer sagaEventProducer;
     private final MoneyRequestEventProducer requestEventProducer;
 
-    // ────────────────────────────────────────────────────────────────
-    //  Create Request
-    // ────────────────────────────────────────────────────────────────
+    // Create Request
 
     /**
      * Create a money request from the authenticated user (requester) to a payer.
@@ -102,9 +100,7 @@ public class MoneyRequestService {
         return MoneyRequestResponse.fromEntity(saved);
     }
 
-    // ────────────────────────────────────────────────────────────────
-    //  Approve Request  →  starts the SAGA
-    // ────────────────────────────────────────────────────────────────
+    // Approve Request - starts the SAGA
 
     /**
      * Payer approves the money request, triggering the transfer SAGA.
@@ -119,7 +115,7 @@ public class MoneyRequestService {
 
         log.info("Payer {} approving request {}", payerUserId, requestId);
 
-        // ── 1. Create a MoneyTransfer record upfront ──────────────────
+        // 1. Create a MoneyTransfer record upfront
         String txRef = "TRF-" + System.currentTimeMillis() + "-"
                 + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -147,13 +143,13 @@ public class MoneyRequestService {
         transfer = transferRepository.save(transfer);
         log.info("Created MoneyTransfer {} for request {}", transfer.getId(), request.getId());
 
-        // ── 2. Update the request status ──────────────────────────────
+        // 2. Update the request status
         request.setStatus(MoneyRequest.RequestStatus.PROCESSING);
         request.setSagaStatus(MoneyRequest.SagaStatus.STARTED);
         request.setApprovedAt(LocalDateTime.now());
         requestRepository.save(request);
 
-        // ── 3. Publish audit/trace event ──────────────────────────────
+        // 3. Publish audit/trace event
         TransferSagaEvent sagaEvent = TransferSagaEvent.initiate(
                 transfer.getId(),
                 txRef,
@@ -167,7 +163,7 @@ public class MoneyRequestService {
         );
         sagaEventProducer.sendSagaEvent(sagaEvent);
 
-        // ── 4. Notify requester that their request was approved ───────
+        // 4. Notify requester that their request was approved
         requestEventProducer.publishRequestEvent(
                 MoneyRequestEvent.create(
                         request.getId(), request.getRequestReference(),
@@ -178,7 +174,7 @@ public class MoneyRequestService {
                 )
         );
 
-        // ── 5. Start SAGA Step 1 using the TRANSFER ID as correlation ─
+        // 5. Start SAGA Step 1 using the TRANSFER ID as correlation
         log.info("Starting request-payment SAGA – Step 1: Reserve funds from payer {} via transfer {}",
                 request.getPayerUserId(), transfer.getId());
 
@@ -193,9 +189,7 @@ public class MoneyRequestService {
         return MoneyRequestResponse.fromEntity(request);
     }
 
-    // ────────────────────────────────────────────────────────────────
-    //  Decline Request
-    // ────────────────────────────────────────────────────────────────
+    // Decline Request
 
     /**
      * Payer declines the money request.
@@ -223,9 +217,7 @@ public class MoneyRequestService {
         return MoneyRequestResponse.fromEntity(request);
     }
 
-    // ────────────────────────────────────────────────────────────────
-    //  Cancel Request (by requester)
-    // ────────────────────────────────────────────────────────────────
+    // Cancel Request (by requester)
 
     /**
      * Requester cancels their own pending request.
@@ -260,9 +252,7 @@ public class MoneyRequestService {
         return MoneyRequestResponse.fromEntity(request);
     }
 
-    // ────────────────────────────────────────────────────────────────
-    //  Query methods
-    // ────────────────────────────────────────────────────────────────
+    // Query methods
 
     @Transactional(readOnly = true)
     public MoneyRequestResponse getRequestById(UUID requestId) {
@@ -294,9 +284,7 @@ public class MoneyRequestService {
         return requestRepository.countPendingForPayer(payerUserId);
     }
 
-    // ────────────────────────────────────────────────────────────────
-    //  Helpers
-    // ────────────────────────────────────────────────────────────────
+    // Helpers
 
     private MoneyRequest findAndValidateForAction(UUID requestId, UUID payerUserId, boolean mustBePayer) {
         MoneyRequest request = requestRepository.findById(requestId)

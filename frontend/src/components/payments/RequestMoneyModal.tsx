@@ -157,7 +157,6 @@ export default function RequestMoneyModal({
               className="bg-dark-900 rounded-2xl shadow-xl border border-dark-800/50 w-full max-w-md overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
               <div className="bg-gradient-to-r from-green-600 to-green-500 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -175,9 +174,7 @@ export default function RequestMoneyModal({
                 )}
               </div>
 
-              {/* Body */}
               <div className="p-6">
-                {/* ── Form step ─────────────────────────────── */}
                 {step === 'form' && (
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
@@ -245,7 +242,6 @@ export default function RequestMoneyModal({
                   </form>
                 )}
 
-                {/* ── Confirming step ──────────────────────── */}
                 {step === 'confirming' && selectedUser && (
                   <div className="space-y-6">
                     <div className="text-center">
@@ -304,7 +300,6 @@ export default function RequestMoneyModal({
                   </div>
                 )}
 
-                {/* ── Processing step ──────────────────────── */}
                 {step === 'processing' && (
                   <div className="text-center py-8">
                     <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -315,7 +310,6 @@ export default function RequestMoneyModal({
                   </div>
                 )}
 
-                {/* ── Success step ─────────────────────────── */}
                 {step === 'success' && request && selectedUser && (
                   <div className="text-center py-6">
                     <motion.div
@@ -352,7 +346,6 @@ export default function RequestMoneyModal({
                   </div>
                 )}
 
-                {/* ── Error step ───────────────────────────── */}
                 {step === 'error' && (
                   <div className="text-center py-6">
                     <motion.div

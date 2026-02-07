@@ -45,7 +45,7 @@ export function usePendingIncomingRequests(userId: string | undefined, page = 0,
 }
 
 /**
- * Pending outgoing requests (user is the requester — waiting for approval).
+ * Pending outgoing requests (user is the requester - waiting for approval).
  */
 export function usePendingOutgoingRequests(userId: string | undefined, page = 0, size = 10) {
   return useQuery({
@@ -67,7 +67,7 @@ export function usePendingRequestCount(userId: string | undefined) {
   });
 }
 
-// ─── Mutations ────────────────────────────────────────────────
+// Mutations
 
 /**
  * Create a money request.

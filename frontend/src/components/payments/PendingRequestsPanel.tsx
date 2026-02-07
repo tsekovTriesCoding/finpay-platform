@@ -82,7 +82,6 @@ export default function PendingRequestsPanel({
       animate={{ opacity: 1, y: 0 }}
       className="card p-6 mb-8 border-green-500/30"
     >
-      {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex items-center justify-between w-full text-left"
@@ -103,7 +102,6 @@ export default function PendingRequestsPanel({
         )}
       </button>
 
-      {/* Request list */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -140,7 +138,6 @@ export default function PendingRequestsPanel({
                       </div>
                     </div>
 
-                    {/* Action buttons */}
                     <div className="flex items-center gap-2 ml-4">
                       {isProcessing ? (
                         <Loader2 className="w-5 h-5 text-dark-400 animate-spin" />

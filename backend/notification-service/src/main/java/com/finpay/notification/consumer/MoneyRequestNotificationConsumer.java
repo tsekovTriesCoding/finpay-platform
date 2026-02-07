@@ -67,7 +67,7 @@ public class MoneyRequestNotificationConsumer {
         }
     }
 
-    // ── REQUEST_CREATED → Notify payer ────────────────────────────
+    // REQUEST_CREATED - Notify payer
 
     private void notifyRequestCreated(UUID payerUserId, UUID requesterUserId,
                                        String reference, BigDecimal amount,
@@ -107,7 +107,7 @@ public class MoneyRequestNotificationConsumer {
         );
     }
 
-    // ── REQUEST_APPROVED → Notify requester ───────────────────────
+    // REQUEST_APPROVED - Notify requester
 
     private void notifyRequestApproved(UUID requesterUserId, UUID payerUserId,
                                         String reference, BigDecimal amount, String currency) {
@@ -121,7 +121,7 @@ public class MoneyRequestNotificationConsumer {
         );
     }
 
-    // ── REQUEST_DECLINED → Notify requester ───────────────────────
+    // REQUEST_DECLINED - Notify requester
 
     private void notifyRequestDeclined(UUID requesterUserId, UUID payerUserId,
                                         String reference, BigDecimal amount, String currency) {
@@ -157,7 +157,7 @@ public class MoneyRequestNotificationConsumer {
         );
     }
 
-    // ── REQUEST_CANCELLED → Notify payer ──────────────────────────
+    // REQUEST_CANCELLED - Notify payer
 
     private void notifyRequestCancelled(UUID payerUserId, UUID requesterUserId,
                                          String reference, BigDecimal amount, String currency) {
@@ -171,7 +171,7 @@ public class MoneyRequestNotificationConsumer {
         );
     }
 
-    // ── REQUEST_EXPIRED → Notify both ─────────────────────────────
+    // REQUEST_EXPIRED - Notify both
 
     private void notifyRequestExpired(UUID requesterUserId, UUID payerUserId,
                                        String reference, BigDecimal amount, String currency) {
@@ -194,7 +194,7 @@ public class MoneyRequestNotificationConsumer {
         );
     }
 
-    // ── REQUEST_COMPLETED → Notify both ───────────────────────────
+    // REQUEST_COMPLETED - Notify both
 
     private void notifyRequestCompleted(UUID requesterUserId, UUID payerUserId,
                                          String reference, BigDecimal amount,
@@ -240,7 +240,7 @@ public class MoneyRequestNotificationConsumer {
         );
     }
 
-    // ── REQUEST_FAILED → Notify both ──────────────────────────────
+    // REQUEST_FAILED - Notify both
 
     private void notifyRequestFailed(UUID requesterUserId, UUID payerUserId,
                                       String reference, BigDecimal amount,
