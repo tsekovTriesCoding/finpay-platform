@@ -176,7 +176,6 @@ export default function SendMoneyModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -185,7 +184,6 @@ export default function SendMoneyModal({
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
           />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -197,7 +195,6 @@ export default function SendMoneyModal({
               className="bg-dark-900 rounded-2xl shadow-xl border border-dark-800/50 w-full max-w-md overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
               <div className="bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -215,9 +212,7 @@ export default function SendMoneyModal({
                 )}
               </div>
 
-              {/* Content */}
               <div className="p-6">
-                {/* Wallet Balance Display */}
                 {step === 'form' && (
                   <div className="mb-6 p-4 bg-dark-800/50 border border-dark-700/50 rounded-xl">
                     <p className="text-sm text-dark-400 mb-1">Available Balance</p>
@@ -233,10 +228,8 @@ export default function SendMoneyModal({
                   </div>
                 )}
 
-                {/* Form Step */}
                 {step === 'form' && (
                   <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* Recipient Search */}
                     <div>
                       <label className="block text-sm font-medium text-dark-300 mb-2">
                         Send to
@@ -249,7 +242,6 @@ export default function SendMoneyModal({
                       />
                     </div>
 
-                    {/* Amount Input */}
                     <div>
                       <label className="block text-sm font-medium text-dark-300 mb-2">
                         Amount
@@ -272,7 +264,6 @@ export default function SendMoneyModal({
                       </div>
                     </div>
 
-                    {/* Description Input */}
                     <div>
                       <label className="block text-sm font-medium text-dark-300 mb-2">
                         Note (optional)
@@ -287,7 +278,6 @@ export default function SendMoneyModal({
                       />
                     </div>
 
-                    {/* Error Display */}
                     {error && (
                       <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl">
                         <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -295,7 +285,6 @@ export default function SendMoneyModal({
                       </div>
                     )}
 
-                    {/* Submit Button */}
                     <button
                       type="submit"
                       disabled={!selectedUser || !amount || isLoadingWallet}
@@ -306,7 +295,6 @@ export default function SendMoneyModal({
                   </form>
                 )}
 
-                {/* Confirmation Step */}
                 {step === 'confirming' && selectedUser && (
                   <div className="space-y-6">
                     <div className="text-center">
@@ -361,7 +349,6 @@ export default function SendMoneyModal({
                   </div>
                 )}
 
-                {/* Processing Step */}
                 {step === 'processing' && (
                   <div className="text-center py-8">
                     <div className="w-16 h-16 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -376,7 +363,6 @@ export default function SendMoneyModal({
                   </div>
                 )}
 
-                {/* Success Step */}
                 {step === 'success' && transfer && selectedUser && (
                   <div className="text-center py-6">
                     <motion.div
@@ -416,7 +402,6 @@ export default function SendMoneyModal({
                   </div>
                 )}
 
-                {/* Error Step */}
                 {step === 'error' && (
                   <div className="text-center py-6">
                     <motion.div

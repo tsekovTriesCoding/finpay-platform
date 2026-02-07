@@ -199,7 +199,6 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Recent Transfers */}
         {recentTransfers.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -312,7 +311,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Send Money Modal */}
       {user?.id && (
         <SendMoneyModal
           isOpen={isSendMoneyOpen}

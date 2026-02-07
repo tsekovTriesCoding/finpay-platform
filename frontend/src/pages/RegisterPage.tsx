@@ -84,7 +84,6 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-950 px-4 py-12 relative overflow-hidden">
-      {/* Background Effects */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20" />
       <motion.div
         className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/20 rounded-full blur-[128px]"
@@ -104,7 +103,6 @@ export default function RegisterPage() {
         className="w-full max-w-md relative z-10"
       >
         <div className="card p-8">
-          {/* Logo & Title */}
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-2 mb-4">
               <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25">
@@ -118,7 +116,6 @@ export default function RegisterPage() {
             <p className="text-dark-400 mt-2">Start managing your finances today</p>
           </div>
 
-          {/* Error Alert */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -130,7 +127,6 @@ export default function RegisterPage() {
             </motion.div>
           )}
 
-          {/* OAuth Buttons */}
           <div className="space-y-3 mb-6">
             <button
               type="button"
@@ -158,7 +154,6 @@ export default function RegisterPage() {
             </button>
           </div>
 
-          {/* Divider */}
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-dark-700"></div>
@@ -168,9 +163,7 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-dark-300 mb-2">
@@ -206,7 +199,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-dark-300 mb-2">
                 Email address
@@ -225,7 +217,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Phone (Optional) */}
             <div>
               <label htmlFor="phoneNumber" className="block text-sm font-medium text-dark-300 mb-2">
                 Phone number <span className="text-dark-500">(optional)</span>
@@ -243,7 +234,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-dark-300 mb-2">
                 Password
@@ -268,7 +258,6 @@ export default function RegisterPage() {
                 </button>
               </div>
               
-              {/* Password Requirements */}
               {formData.password && (
                 <div className="mt-2 space-y-1">
                   {passwordRequirements.map((req, index) => (
@@ -283,7 +272,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-dark-300 mb-2">
                 Confirm password
@@ -309,7 +297,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Terms */}
             <div className="flex items-start">
               <input
                 type="checkbox"
@@ -346,7 +333,6 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          {/* Sign in link */}
           <p className="mt-6 text-center text-sm text-dark-400">
             Already have an account?{' '}
             <Link
