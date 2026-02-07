@@ -14,18 +14,11 @@ export interface Wallet {
 
 export const walletService = {
   /**
-   * Get or create wallet for a user.
+   * Get wallet for a user.
+   * Wallet is created via Kafka events during registration.
    */
   getWallet: async (userId: string): Promise<Wallet> => {
     const response = await api.get<Wallet>(`/api/v1/wallets/user/${userId}`);
-    return response.data;
-  },
-
-  /**
-   * Get wallet details by user ID (throws if not found).
-   */
-  getWalletDetails: async (userId: string): Promise<Wallet> => {
-    const response = await api.get<Wallet>(`/api/v1/wallets/user/${userId}/details`);
     return response.data;
   },
 };

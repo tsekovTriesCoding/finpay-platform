@@ -308,6 +308,24 @@ public class WalletService {
         return WalletResponse.fromEntity(wallet);
     }
 
+    /**
+     * Close a wallet when user is deleted.
+     * Idempotent - does nothing if wallet doesn't exist or is already closed.
+     */
+    public void closeWalletForUser(UUID userId) {
+        log.info("Closing wallet for user: {}", userId);
+        
+        walletRepository.findByUserId(userId).ifPresent(wallet -> {
+            if (wallet.getStatus() != Wallet.WalletStatus.CLOSED) {
+                wallet.setStatus(Wallet.WalletStatus.CLOSED);
+                walletRepository.save(wallet);
+                log.info("Wallet closed for user: {}", userId);
+            } else {
+                log.info("Wallet already closed for user: {}", userId);
+            }
+        });
+    }
+
     private Wallet createWalletForUser(UUID userId) {
         log.info("Creating new wallet for user: {} with initial balance: {}", userId, DEFAULT_INITIAL_BALANCE);
         
