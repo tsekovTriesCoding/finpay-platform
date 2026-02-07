@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, User, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { paymentService, UserSearchResult } from '../../api';
+import { UserSearchResult } from '../../api';
+import { useUserSearch } from '../../hooks';
 
 interface UserSearchProps {
   excludeUserId: string;
@@ -17,62 +18,28 @@ export default function UserSearch({
   selectedUser,
   onClear 
 }: UserSearchProps) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<UserSearchResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const searchUsers = useCallback(async (searchQuery: string) => {
-    if (searchQuery.trim().length < 2) {
-      setResults([]);
-      setShowDropdown(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await paymentService.searchUsers(searchQuery, excludeUserId);
-      setResults(response.content);
-      setShowDropdown(response.content.length > 0);
-    } catch (err) {
-      console.error('Error searching users:', err);
-      setError('Failed to search users');
-      setResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [excludeUserId]);
+  const { query, debouncedQuery, results, isLoading, error, search, clear } = useUserSearch({
+    excludeUserId,
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      searchUsers(value);
-    }, 300);
+    search(e.target.value);
+    setShowDropdown(true);
   };
 
   const handleUserSelect = (user: UserSearchResult) => {
     onUserSelect(user);
-    setQuery('');
-    setResults([]);
+    clear();
     setShowDropdown(false);
   };
 
   const handleClear = () => {
     onClear();
-    setQuery('');
-    setResults([]);
+    clear();
     inputRef.current?.focus();
   };
 
@@ -85,14 +52,6 @@ export default function UserSearch({
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
   }, []);
 
   const getInitials = (firstName: string, lastName: string) => {
@@ -199,7 +158,7 @@ export default function UserSearch({
         )}
       </AnimatePresence>
 
-      {query.length >= 2 && !isLoading && results.length === 0 && showDropdown && (
+      {debouncedQuery.length >= 2 && !isLoading && results.length === 0 && showDropdown && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -207,7 +166,7 @@ export default function UserSearch({
         >
           <div className="flex items-center gap-3 text-dark-400">
             <User className="w-5 h-5" />
-            <p>No users found matching "{query}"</p>
+            <p>No users found matching &quot;{debouncedQuery}&quot;</p>
           </div>
         </motion.div>
       )}

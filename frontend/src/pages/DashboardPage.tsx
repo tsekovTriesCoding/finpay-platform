@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Wallet, 
@@ -14,46 +14,27 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
-import { paymentService, walletService, Wallet as WalletType, MoneyTransfer } from '../api';
+import { MoneyTransfer } from '../api';
+import { useWallet, useTransferHistory } from '../hooks';
 import { SendMoneyModal } from '../components/payments';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [wallet, setWallet] = useState<WalletType | null>(null);
-  const [isLoadingWallet, setIsLoadingWallet] = useState(true);
   const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
-  const [recentTransfers, setRecentTransfers] = useState<MoneyTransfer[]>([]);
 
-  const loadWallet = useCallback(async () => {
-    if (!user?.id) return;
-    setIsLoadingWallet(true);
-    try {
-      const walletData = await walletService.getWallet(user.id);
-      setWallet(walletData);
-    } catch (err) {
-      console.error('Error loading wallet:', err);
-    } finally {
-      setIsLoadingWallet(false);
-    }
-  }, [user?.id]);
+  const {
+    data: wallet,
+    isLoading: isLoadingWallet,
+    refetch: refetchWallet,
+  } = useWallet(user?.id);
 
-  const loadRecentTransfers = useCallback(async () => {
-    if (!user?.id) return;
-    try {
-      const response = await paymentService.getTransferHistory(user.id, 0, 5);
-      setRecentTransfers(response.content);
-    } catch (err) {
-      console.error('Error loading transfers:', err);
-    }
-  }, [user?.id]);
+  const {
+    data: transfersData,
+    refetch: refetchTransfers,
+  } = useTransferHistory(user?.id);
 
-  useEffect(() => {
-    if (user?.id) {
-      loadWallet();
-      loadRecentTransfers();
-    }
-  }, [user?.id, loadWallet, loadRecentTransfers]);
+  const recentTransfers = transfersData?.content ?? [];
 
   const handleLogout = async () => {
     await logout();
@@ -65,8 +46,8 @@ export default function DashboardPage() {
   };
 
   const handleTransferComplete = (_transfer: MoneyTransfer) => {
-    loadWallet();
-    loadRecentTransfers();
+    refetchWallet();
+    refetchTransfers();
   };
 
   const formatCurrency = (amount: number) => {
@@ -148,7 +129,7 @@ export default function DashboardPage() {
               <span className="text-blue-100">Available Balance</span>
             </div>
             <button
-              onClick={loadWallet}
+              onClick={() => refetchWallet()}
               disabled={isLoadingWallet}
               className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors disabled:opacity-50"
               title="Refresh balance"

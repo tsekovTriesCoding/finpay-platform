@@ -21,6 +21,19 @@ export const walletService = {
     const response = await api.get<Wallet>(`/api/v1/wallets/user/${userId}`);
     return response.data;
   },
+
+  /**
+   * Deposit funds into a wallet.
+   */
+  deposit: async (userId: string, amount: number, currency: string): Promise<Wallet> => {
+    const response = await api.post<Wallet>('/api/v1/wallets/deposit', {
+      userId,
+      amount,
+      currency,
+    });
+    return response.data;
+  },
 };
 
 export default walletService;
+
