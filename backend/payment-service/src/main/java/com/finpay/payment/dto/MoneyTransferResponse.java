@@ -14,7 +14,9 @@ public record MoneyTransferResponse(
         BigDecimal amount,
         String currency,
         String description,
+        MoneyTransfer.TransferType transferType,
         MoneyTransfer.TransferStatus status,
+        UUID sourceRequestId,
         String failureReason,
         LocalDateTime completedAt,
         LocalDateTime createdAt
@@ -28,7 +30,9 @@ public record MoneyTransferResponse(
                 transfer.getAmount(),
                 transfer.getCurrency(),
                 transfer.getDescription(),
+                transfer.getTransferType(),
                 transfer.getStatus(),
+                transfer.getSourceRequestId(),
                 transfer.getFailureReason(),
                 transfer.getCompletedAt(),
                 transfer.getCreatedAt()

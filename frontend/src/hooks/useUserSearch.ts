@@ -20,7 +20,7 @@ export const userSearchKeys = {
  *
  * - Debounces the input so the API is only called after the user stops typing.
  * - Caches results per search term so re-typing the same query is instant.
- * - Loading / error states come from useQuery — no manual try/catch.
+ * - Loading / error states come from useQuery - no manual try/catch.
  */
 export function useUserSearch({
   excludeUserId,

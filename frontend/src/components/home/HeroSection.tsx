@@ -53,7 +53,7 @@ const HeroSection = () => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary-500"></span>
             </span>
             <span className="text-sm text-dark-300">
-              Introducing FinPay 2.0 — <span className="text-white font-medium">Now with instant transfers</span>
+              Introducing FinPay 2.0 - <span className="text-white font-medium">Now with instant transfers</span>
             </span>
           </motion.div>
 

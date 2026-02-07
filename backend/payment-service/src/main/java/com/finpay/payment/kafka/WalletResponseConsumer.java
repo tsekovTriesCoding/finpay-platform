@@ -1,10 +1,14 @@
 package com.finpay.payment.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.finpay.payment.entity.MoneyRequest;
 import com.finpay.payment.entity.MoneyTransfer;
+import com.finpay.payment.event.MoneyRequestEvent;
 import com.finpay.payment.event.TransferSagaEvent;
 import com.finpay.payment.event.WalletResponseEvent;
+import com.finpay.payment.repository.MoneyRequestRepository;
 import com.finpay.payment.repository.MoneyTransferRepository;
+import com.finpay.payment.service.MoneyRequestEventProducer;
 import com.finpay.payment.service.TransferSagaEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +30,10 @@ import java.util.UUID;
 public class WalletResponseConsumer {
 
     private final MoneyTransferRepository transferRepository;
+    private final MoneyRequestRepository requestRepository;
     private final WalletCommandProducer walletCommandProducer;
     private final TransferSagaEventProducer sagaEventProducer;
+    private final MoneyRequestEventProducer requestEventProducer;
     private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "wallet-events", groupId = "payment-service-wallet-consumer")
@@ -231,6 +237,29 @@ public class WalletResponseConsumer {
         transfer.setFailedAt(LocalDateTime.now());
         transferRepository.save(transfer);
 
+        // If this transfer was triggered by a money request, fail the request too
+        if (transfer.getSourceRequestId() != null) {
+            requestRepository.findById(transfer.getSourceRequestId()).ifPresent(request -> {
+                request.setStatus(MoneyRequest.RequestStatus.FAILED);
+                request.setSagaStatus(MoneyRequest.SagaStatus.FAILED);
+                request.setFailureReason(event.failureReason());
+                request.setFailedAt(LocalDateTime.now());
+                request.setCompensationRequired(true);
+                requestRepository.save(request);
+
+                requestEventProducer.publishRequestEvent(
+                        MoneyRequestEvent.withFailure(
+                                request.getId(), request.getRequestReference(),
+                                request.getRequesterUserId(), request.getPayerUserId(),
+                                request.getAmount(), request.getCurrency(),
+                                request.getDescription(),
+                                MoneyRequestEvent.EventType.REQUEST_FAILED,
+                                event.failureReason()
+                        )
+                );
+            });
+        }
+
         // Start compensation based on what was already done
         startCompensation(transfer);
     }
@@ -282,7 +311,9 @@ public class WalletResponseConsumer {
     }
 
     /**
-     * Complete the transfer successfully
+     * Complete the transfer successfully.
+     * If this transfer originated from a money request, also complete the request
+     * and publish the REQUEST_COMPLETED event.
      */
     private void completeTransfer(MoneyTransfer transfer) {
         transfer.setNotificationSent(true);
@@ -292,5 +323,41 @@ public class WalletResponseConsumer {
         transferRepository.save(transfer);
 
         log.info("SAGA completed successfully for transfer {}", transfer.getId());
+
+        // If this transfer was triggered by a money request, complete the request too
+        if (transfer.getSourceRequestId() != null) {
+            completeLinkedRequest(transfer);
+        }
+    }
+
+    /**
+     * Complete the linked MoneyRequest and publish notification events.
+     */
+    private void completeLinkedRequest(MoneyTransfer transfer) {
+        requestRepository.findById(transfer.getSourceRequestId()).ifPresent(request -> {
+            request.setStatus(MoneyRequest.RequestStatus.COMPLETED);
+            request.setSagaStatus(MoneyRequest.SagaStatus.COMPLETED);
+            request.setCompletedAt(LocalDateTime.now());
+            request.setNotificationSent(true);
+            request.setFundsReserved(true);
+            request.setFundsDeducted(true);
+            request.setFundsCredited(true);
+            request.setPayerWalletId(transfer.getSenderWalletId());
+            request.setRequesterWalletId(transfer.getRecipientWalletId());
+            requestRepository.save(request);
+
+            requestEventProducer.publishRequestEvent(
+                    MoneyRequestEvent.create(
+                            request.getId(), request.getRequestReference(),
+                            request.getRequesterUserId(), request.getPayerUserId(),
+                            request.getAmount(), request.getCurrency(),
+                            request.getDescription(),
+                            MoneyRequestEvent.EventType.REQUEST_COMPLETED
+                    )
+            );
+
+            log.info("Linked MoneyRequest {} completed via transfer {}",
+                    request.getId(), transfer.getId());
+        });
     }
 }

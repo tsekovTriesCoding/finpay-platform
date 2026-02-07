@@ -77,6 +77,7 @@ public class MoneyTransferService {
                 .amount(request.amount())
                 .currency(request.currency().toUpperCase())
                 .description(request.description())
+                .transferType(MoneyTransfer.TransferType.SEND)
                 .status(MoneyTransfer.TransferStatus.PROCESSING)
                 .sagaStatus(MoneyTransfer.SagaStatus.STARTED)
                 .fundsReserved(false)
