@@ -1,13 +1,16 @@
 package com.finpay.payment.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.finpay.payment.entity.BillPayment;
 import com.finpay.payment.entity.MoneyRequest;
 import com.finpay.payment.entity.MoneyTransfer;
 import com.finpay.payment.event.MoneyRequestEvent;
 import com.finpay.payment.event.TransferSagaEvent;
 import com.finpay.payment.event.WalletResponseEvent;
+import com.finpay.payment.repository.BillPaymentRepository;
 import com.finpay.payment.repository.MoneyRequestRepository;
 import com.finpay.payment.repository.MoneyTransferRepository;
+import com.finpay.payment.service.BillPaymentService;
 import com.finpay.payment.service.MoneyRequestEventProducer;
 import com.finpay.payment.service.TransferSagaEventProducer;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +34,11 @@ public class WalletResponseConsumer {
 
     private final MoneyTransferRepository transferRepository;
     private final MoneyRequestRepository requestRepository;
+    private final BillPaymentRepository billPaymentRepository;
     private final WalletCommandProducer walletCommandProducer;
     private final TransferSagaEventProducer sagaEventProducer;
     private final MoneyRequestEventProducer requestEventProducer;
+    private final BillPaymentService billPaymentService;
     private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "wallet-events", groupId = "payment-service-wallet-consumer")
@@ -51,11 +56,18 @@ public class WalletResponseConsumer {
         log.info("Received wallet response: {} for correlationId: {}, success: {}",
                 event.responseType(), event.correlationId(), event.success());
 
-        UUID transferId = event.correlationId();
-        MoneyTransfer transfer = transferRepository.findById(transferId).orElse(null);
+        UUID correlationId = event.correlationId();
 
+        // Route to bill-payment saga if the correlationId matches a BillPayment
+        BillPayment billPayment = billPaymentRepository.findById(correlationId).orElse(null);
+        if (billPayment != null) {
+            routeToBillPaymentSaga(billPayment, event);
+            return;
+        }
+
+        MoneyTransfer transfer = transferRepository.findById(correlationId).orElse(null);
         if (transfer == null) {
-            log.warn("Transfer not found for correlationId: {}", transferId);
+            log.warn("No transfer or bill payment found for correlationId: {}", correlationId);
             return;
         }
 
@@ -359,5 +371,29 @@ public class WalletResponseConsumer {
             log.info("Linked MoneyRequest {} completed via transfer {}",
                     request.getId(), transfer.getId());
         });
+    }
+
+    // Bill Payment Saga routing
+
+    private void routeToBillPaymentSaga(BillPayment billPayment, WalletResponseEvent event) {
+        log.info("Routing wallet response {} to bill payment saga: {}",
+                event.responseType(), billPayment.getId());
+
+        if (!event.success()) {
+            billPaymentService.handleFailure(billPayment.getId(), event.failureReason());
+            return;
+        }
+
+        switch (event.responseType()) {
+            case FUNDS_RESERVED -> billPaymentService.handleFundsReserved(
+                    billPayment.getId(), event.walletId());
+            case FUNDS_DEDUCTED -> billPaymentService.handleFundsDeducted(billPayment.getId());
+            case FUNDS_RELEASED, DEDUCTION_REVERSED ->
+                    billPaymentService.handleCompensated(billPayment.getId());
+            case OPERATION_FAILED ->
+                    billPaymentService.handleFailure(billPayment.getId(), event.failureReason());
+            default -> log.warn("Unhandled response type {} for bill payment {}",
+                    event.responseType(), billPayment.getId());
+        }
     }
 }
