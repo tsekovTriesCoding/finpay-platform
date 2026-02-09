@@ -2,6 +2,7 @@ import { Settings, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import type { User } from '../../api/authApi';
+import { NotificationBell } from '../notifications';
 
 interface DashboardHeaderProps {
   user: User;
@@ -21,7 +22,7 @@ export default function DashboardHeader({ user, onLogout }: DashboardHeaderProps
   };
 
   return (
-    <header className="bg-dark-900/50 border-b border-dark-800/50 backdrop-blur-xl">
+    <header className="bg-dark-900/50 border-b border-dark-800/50 backdrop-blur-xl sticky top-0 z-[60]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
@@ -32,6 +33,7 @@ export default function DashboardHeader({ user, onLogout }: DashboardHeaderProps
           </div>
 
           <div className="flex items-center gap-4">
+            <NotificationBell userId={user.id} />
             <button className="p-2 text-dark-400 hover:text-white transition-colors">
               <Settings className="w-5 h-5" />
             </button>
