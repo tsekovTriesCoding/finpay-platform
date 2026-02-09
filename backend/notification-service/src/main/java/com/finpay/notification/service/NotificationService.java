@@ -30,6 +30,7 @@ public class NotificationService {
     private final NotificationPreferenceRepository preferenceRepository;
     private final EmailService emailService;
     private final NotificationMapper notificationMapper;
+    private final WebSocketNotificationService webSocketNotificationService;
 
     public NotificationResponse createNotification(NotificationRequest request) {
         log.info("Creating notification for user: {} type: {}", request.userId(), request.type());
@@ -98,18 +99,20 @@ public class NotificationService {
     }
 
     private void sendSmsNotification(Notification notification) {
-        // SMS implementation would go here
+        // TODO: SMS provider integration
         log.info("SMS notification would be sent to: {}", notification.getRecipient());
     }
 
     private void sendPushNotification(Notification notification) {
-        // Push notification implementation would go here
-        log.info("Push notification would be sent to user: {}", notification.getUserId());
+        log.info("Sending push notification to user: {} via WebSocket", notification.getUserId());
+        NotificationResponse response = notificationMapper.toResponse(notification);
+        webSocketNotificationService.pushToUser(notification.getUserId(), response);
     }
 
     private void markAsInApp(Notification notification) {
-        // In-app notifications are stored and retrieved by the user
-        log.info("In-app notification created for user: {}", notification.getUserId());
+        log.info("In-app notification created for user: {}, pushing via WebSocket", notification.getUserId());
+        NotificationResponse response = notificationMapper.toResponse(notification);
+        webSocketNotificationService.pushToUser(notification.getUserId(), response);
     }
 
     @Transactional(readOnly = true)
@@ -152,6 +155,9 @@ public class NotificationService {
         notification.setStatus(Notification.NotificationStatus.READ);
         Notification updated = notificationRepository.save(notification);
 
+        long unreadCount = notificationRepository.countByUserIdAndReadAtIsNull(notification.getUserId());
+        webSocketNotificationService.pushUnreadCount(notification.getUserId(), unreadCount);
+
         return notificationMapper.toResponse(updated);
     }
 
@@ -166,6 +172,8 @@ public class NotificationService {
 
         notificationRepository.saveAll(unread);
         log.info("Marked {} notifications as read for user: {}", unread.size(), userId);
+
+        webSocketNotificationService.pushUnreadCount(userId, 0);
     }
 
     public void deleteNotification(UUID notificationId) {
@@ -175,7 +183,6 @@ public class NotificationService {
         notificationRepository.deleteById(notificationId);
     }
 
-    // Preference management
     public NotificationPreference getOrCreatePreferences(UUID userId) {
         return preferenceRepository.findByUserId(userId)
                 .orElseGet(() -> createDefaultPreferences(userId));

@@ -3,6 +3,7 @@ export { authService } from './authApi';
 export { paymentService } from './paymentApi';
 export { walletService } from './walletApi';
 export { billPaymentService, BILLERS, BILL_CATEGORY_LABELS } from './billPaymentApi';
+export { notificationService } from './notificationApi';
 export type { RegisterData, LoginData, User, AuthResponse } from './authApi';
 export type { 
   UserSearchResult, 
@@ -24,3 +25,12 @@ export type {
   BillPaymentPageResponse,
   Biller,
 } from './billPaymentApi';
+export type {
+  NotificationType,
+  NotificationChannel,
+  NotificationStatus,
+  Notification,
+  NotificationPreferences,
+  NotificationPreferencesRequest,
+  NotificationPage,
+} from './notificationApi';
