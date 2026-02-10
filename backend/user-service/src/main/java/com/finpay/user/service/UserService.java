@@ -284,4 +284,18 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+    public UserResponse updateProfileImage(UUID id, String profileImageUrl) {
+        log.info("Updating profile image for user: {}", id);
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
+
+        user.setProfileImageUrl(profileImageUrl);
+        User updatedUser = userRepository.save(user);
+
+        publishUserEvent(updatedUser, UserEvent.EventType.USER_UPDATED);
+
+        return userMapper.toResponse(updatedUser);
+    }
 }

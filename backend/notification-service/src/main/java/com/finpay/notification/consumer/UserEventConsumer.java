@@ -41,6 +41,7 @@ public class UserEventConsumer {
                 case "USER_CREATED" -> handleUserCreated(UUID.fromString(userId), email, firstName);
                 case "USER_EMAIL_VERIFIED" -> handleEmailVerified(UUID.fromString(userId), email, firstName);
                 case "USER_STATUS_CHANGED" -> handleStatusChanged(UUID.fromString(userId), email, firstName);
+                case "USER_UPDATED" -> handleUserUpdated(UUID.fromString(userId), firstName);
                 default -> log.debug("Ignoring user event type: {}", eventType);
             }
         } catch (Exception e) {
@@ -122,6 +123,34 @@ public class UserEventConsumer {
                 subject,
                 content,
                 email
+        );
+    }
+
+    private void handleUserUpdated(UUID userId, String firstName) {
+        log.info("Processing USER_UPDATED event for user: {}", userId);
+
+        // Send as EMAIL only (not IN_APP) - the user already sees inline form
+        // feedback for their own changes. This email serves as a security audit
+        // trail so they're alerted if someone else modifies their profile.
+        String subject = "Profile Updated - FinPay";
+        String content = String.format("""
+            Hi %s,
+            
+            Your profile has been updated successfully.
+            
+            If you did not make this change, please contact our support team immediately.
+            
+            Best regards,
+            The FinPay Team
+            """, firstName != null ? firstName : "there");
+
+        notificationService.createAndSendNotification(
+                userId,
+                Notification.NotificationType.ACCOUNT_UPDATE,
+                Notification.NotificationChannel.EMAIL,
+                subject,
+                content,
+                null
         );
     }
 }

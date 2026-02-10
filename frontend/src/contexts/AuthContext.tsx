@@ -24,13 +24,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const setAuthData = useCallback((response: AuthResponse) => {
-    // Only store user info locally (tokens are in HTTP-only cookies)
     localStorage.setItem('user', JSON.stringify(response.user));
     setUser(response.user);
   }, []);
 
   const clearAuthData = useCallback(() => {
-    // Clear user data (cookies are cleared server-side on logout)
     localStorage.removeItem('user');
     setUser(null);
   }, []);
@@ -42,12 +40,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (storedUser) {
         try {
-          // Verify the session by fetching current user (cookies sent automatically)
+          // /me now returns the full profile (auth-service fetches from user-service internally)
           const currentUser = await authService.getCurrentUser();
           setUser(currentUser);
           localStorage.setItem('user', JSON.stringify(currentUser));
         } catch {
-          // Session is invalid, clear auth data
           clearAuthData();
         }
       }
@@ -60,6 +57,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (data: LoginData) => {
     const response = await authService.login(data);
     setAuthData(response);
+    // Fetch full profile from /me (enriched with user-service data: address, profileImageUrl, etc.)
+    try {
+      const fullUser = await authService.getCurrentUser();
+      setUser(fullUser);
+      localStorage.setItem('user', JSON.stringify(fullUser));
+    } catch { /* login succeeded, full profile will load on next page refresh */ }
   };
 
   const register = async (data: RegisterData) => {
@@ -85,6 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const refreshUser = async () => {
     try {
+      // /me now returns the full profile from user-service (address, profileImageUrl, etc.)
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
       localStorage.setItem('user', JSON.stringify(currentUser));

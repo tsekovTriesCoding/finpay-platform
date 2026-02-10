@@ -17,7 +17,6 @@ import {
   PayBillModal,
   PendingRequestsPanel,
 } from '../components/payments';
-import { NotificationProvider } from '../components/notifications';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -29,7 +28,6 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <NotificationProvider userId={user.id}>
     <div className="min-h-screen bg-dark-950">
       <DashboardHeader user={user} onLogout={logout} />
 
@@ -88,6 +86,5 @@ export default function DashboardPage() {
         userId={user.id}
       />
     </div>
-    </NotificationProvider>
   );
 }

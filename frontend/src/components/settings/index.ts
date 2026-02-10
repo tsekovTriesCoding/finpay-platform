@@ -1,0 +1,3 @@
+export { default as ProfileTab } from './ProfileTab';
+export { default as NotificationPreferencesTab } from './NotificationPreferencesTab';
+export { default as ProfileImageUpload } from './ProfileImageUpload';

@@ -5,6 +5,7 @@ import com.finpay.notification.dto.NotificationRequest;
 import com.finpay.notification.dto.NotificationResponse;
 import com.finpay.notification.entity.Notification;
 import com.finpay.notification.entity.NotificationPreference;
+import com.finpay.notification.event.NotificationPreferenceEvent;
 import com.finpay.notification.exception.ResourceNotFoundException;
 import com.finpay.notification.mapper.NotificationMapper;
 import com.finpay.notification.repository.NotificationPreferenceRepository;
@@ -31,6 +32,7 @@ public class NotificationService {
     private final EmailService emailService;
     private final NotificationMapper notificationMapper;
     private final WebSocketNotificationService webSocketNotificationService;
+    private final NotificationPreferenceEventProducer preferenceEventProducer;
 
     public NotificationResponse createNotification(NotificationRequest request) {
         log.info("Creating notification for user: {} type: {}", request.userId(), request.type());
@@ -56,6 +58,8 @@ public class NotificationService {
                 .recipient(recipient)
                 .status(Notification.NotificationStatus.PENDING)
                 .retryCount(0)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
 
         Notification saved = notificationRepository.save(notification);
@@ -206,6 +210,28 @@ public class NotificationService {
     public NotificationPreference updatePreferences(UUID userId, NotificationPreferenceRequest request) {
         NotificationPreference preference = getOrCreatePreferences(userId);
         notificationMapper.updatePreferences(request, preference);
-        return preferenceRepository.save(preference);
+        NotificationPreference saved = preferenceRepository.save(preference);
+
+        // Publish preference change event to Kafka
+        publishPreferenceEvent(saved, NotificationPreferenceEvent.EventType.PREFERENCES_UPDATED);
+
+        return saved;
+    }
+
+    private void publishPreferenceEvent(NotificationPreference pref, NotificationPreferenceEvent.EventType eventType) {
+        NotificationPreferenceEvent event = new NotificationPreferenceEvent(
+                pref.getUserId(),
+                pref.isEmailEnabled(),
+                pref.isSmsEnabled(),
+                pref.isPushEnabled(),
+                pref.isInAppEnabled(),
+                pref.isPaymentNotifications(),
+                pref.isSecurityNotifications(),
+                pref.isPromotionalNotifications(),
+                pref.isSystemNotifications(),
+                eventType.name(),
+                LocalDateTime.now()
+        );
+        preferenceEventProducer.sendPreferenceEvent(event);
     }
 }
