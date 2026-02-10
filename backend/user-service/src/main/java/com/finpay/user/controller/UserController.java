@@ -4,15 +4,19 @@ import com.finpay.user.dto.UserRequest;
 import com.finpay.user.dto.UserResponse;
 import com.finpay.user.dto.UserSearchResponse;
 import com.finpay.user.entity.User;
+import com.finpay.user.service.CloudinaryService;
 import com.finpay.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -21,6 +25,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final CloudinaryService cloudinaryService;
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
@@ -86,6 +91,22 @@ public class UserController {
     public ResponseEntity<UserResponse> verifyEmail(@PathVariable UUID id) {
         UserResponse response = userService.verifyEmail(id);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping(value = "/{id}/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> uploadProfileImage(
+            @PathVariable UUID id,
+            @RequestParam("file") MultipartFile file) {
+        String imageUrl = cloudinaryService.uploadProfileImage(file, id);
+        userService.updateProfileImage(id, imageUrl);
+        return ResponseEntity.ok(Map.of("profileImageUrl", imageUrl));
+    }
+
+    @DeleteMapping("/{id}/profile-image")
+    public ResponseEntity<Void> deleteProfileImage(@PathVariable UUID id) {
+        cloudinaryService.deleteProfileImage(id);
+        userService.updateProfileImage(id, null);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/health")

@@ -34,13 +34,27 @@ export default function DashboardHeader({ user, onLogout }: DashboardHeaderProps
 
           <div className="flex items-center gap-4">
             <NotificationBell userId={user.id} />
-            <button className="p-2 text-dark-400 hover:text-white transition-colors">
+            <button
+              onClick={() => navigate('/settings')}
+              className="p-2 text-dark-400 hover:text-white transition-colors"
+              title="Settings"
+            >
               <Settings className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-500 rounded-full flex items-center justify-center text-white font-medium shadow-lg shadow-primary-500/25">
-                {user.firstName?.[0]}
-                {user.lastName?.[0]}
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium shadow-lg shadow-primary-500/25 overflow-hidden">
+                {user.profileImageUrl ? (
+                  <img
+                    src={user.profileImageUrl}
+                    alt={`${user.firstName} ${user.lastName}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary-600 to-primary-500 flex items-center justify-center">
+                    {user.firstName?.[0]}
+                    {user.lastName?.[0]}
+                  </div>
+                )}
               </div>
               <div className="hidden sm:block">
                 <p className="text-sm font-medium text-white">

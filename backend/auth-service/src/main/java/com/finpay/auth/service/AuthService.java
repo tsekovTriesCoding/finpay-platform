@@ -35,6 +35,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthEventProducer authEventProducer;
+    private final UserServiceClient userServiceClient;
 
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering new user with email: {}", request.email());
@@ -155,6 +156,14 @@ public class AuthService {
         UserCredential credential = credentialRepository.findById(userId)
                 .orElseThrow(() -> new InvalidTokenException("User not found"));
         
+        // Try to fetch the full profile from user-service (has address, fresh profileImageUrl, etc.)
+        UserDto fullProfile = userServiceClient.getUserProfile(userId);
+        if (fullProfile != null) {
+            return fullProfile.withoutPassword();
+        }
+        
+        // Fall back to local credential data if user-service is unavailable
+        log.debug("Using local credential data for user: {} (user-service unavailable)", userId);
         return toUserDto(credential);
     }
 

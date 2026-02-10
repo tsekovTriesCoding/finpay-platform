@@ -4,7 +4,9 @@ export { paymentService } from './paymentApi';
 export { walletService } from './walletApi';
 export { billPaymentService, BILLERS, BILL_CATEGORY_LABELS } from './billPaymentApi';
 export { notificationService } from './notificationApi';
+export { userService } from './userApi';
 export type { RegisterData, LoginData, User, AuthResponse } from './authApi';
+export type { UpdateProfileRequest, ProfileImageResponse } from './userApi';
 export type { 
   UserSearchResult, 
   UserSearchResponse, 
