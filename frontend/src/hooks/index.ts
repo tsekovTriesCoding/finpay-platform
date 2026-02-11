@@ -24,3 +24,4 @@ export {
   useDeleteNotification,
 } from './useNotifications';
 export { useWebSocket } from './useWebSocket';
+export { transactionDetailKeys, useTransactionDetail } from './useTransactionDetail';

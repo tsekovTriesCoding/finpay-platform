@@ -5,6 +5,7 @@ export { walletService } from './walletApi';
 export { billPaymentService, BILLERS, BILL_CATEGORY_LABELS } from './billPaymentApi';
 export { notificationService } from './notificationApi';
 export { userService } from './userApi';
+export { transactionDetailService } from './transactionDetailApi';
 export type { RegisterData, LoginData, User, AuthResponse } from './authApi';
 export type { UpdateProfileRequest, ProfileImageResponse } from './userApi';
 export type { 
@@ -36,3 +37,8 @@ export type {
   NotificationPreferencesRequest,
   NotificationPage,
 } from './notificationApi';
+export type {
+  StatusTimelineEntry,
+  TransactionType,
+  TransactionDetail,
+} from './transactionDetailApi';

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight } from 'lucide-react';
 
+import type { TransactionType } from '../../api/transactionDetailApi';
 import { useTransferHistory } from '../../hooks';
 import { formatCurrency, statusBadgeClasses } from './utils';
 import SectionSkeleton from './SectionSkeleton';
@@ -9,13 +10,14 @@ import EmptyState from './EmptyState';
 
 interface RecentTransfersProps {
   userId: string;
+  onTransactionSelect?: (type: TransactionType, id: string) => void;
 }
 
 /**
  * Self-contained recent transfers list.
  * Owns its own query via `useTransferHistory` - handles loading, error, and empty states.
  */
-export default function RecentTransfers({ userId }: RecentTransfersProps) {
+export default function RecentTransfers({ userId, onTransactionSelect }: RecentTransfersProps) {
   const { data, isLoading, isError, refetch } = useTransferHistory(userId);
 
   if (isLoading) return <SectionSkeleton rows={3} />;
@@ -53,7 +55,8 @@ export default function RecentTransfers({ userId }: RecentTransfersProps) {
           return (
             <div
               key={transfer.id}
-              className="flex items-center justify-between p-3 bg-dark-800/50 rounded-lg border border-dark-700/50"
+              onClick={() => onTransactionSelect?.('TRANSFER', transfer.id)}
+              className="flex items-center justify-between p-3 bg-dark-800/50 rounded-lg border border-dark-700/50 cursor-pointer hover:bg-dark-800 hover:border-dark-600 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <div
