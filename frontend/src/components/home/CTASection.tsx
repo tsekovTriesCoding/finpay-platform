@@ -2,6 +2,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const floatingVariants = {
   animate: {
@@ -15,6 +16,7 @@ const floatingVariants = {
 };
 
 const CTASection = () => {
+  const { isAuthenticated } = useAuth();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
 
@@ -94,8 +96,8 @@ const CTASection = () => {
               transition={{ duration: 0.5, delay: 0.5 }}
             >
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/register" className="btn-primary text-lg px-8 py-4 w-full sm:w-auto">
-                  Get Started Free
+                <Link to={isAuthenticated ? "/dashboard" : "/register"} className="btn-primary text-lg px-8 py-4 w-full sm:w-auto">
+                  {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </motion.div>

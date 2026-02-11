@@ -9,7 +9,6 @@ import {
   QuickActions,
   RecentTransfers,
   RecentBillPayments,
-  AccountStatus,
 } from '../components/dashboard';
 import {
   SendMoneyModal,
@@ -57,8 +56,6 @@ export default function DashboardPage() {
         <RecentTransfers userId={user.id} />
 
         <RecentBillPayments userId={user.id} />
-
-        <AccountStatus user={user} />
 
         <div className="mt-8 text-center">
           <Link to="/" className="text-primary-400 hover:text-primary-300 text-sm">

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Zap } from 'lucide-react';
+import { Menu, X, Zap, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Navbar = () => {
+  const { isAuthenticated, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -87,16 +89,27 @@ const Navbar = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-4">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link to="/login" className="nav-link">
-                Sign In
-              </Link>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link to="/register" className="btn-primary">
-                Get Started
-              </Link>
-            </motion.div>
+            {!isLoading && isAuthenticated ? (
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link to="/dashboard" className="btn-primary flex items-center gap-2">
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </Link>
+              </motion.div>
+            ) : (
+              <>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/login" className="nav-link">
+                    Sign In
+                  </Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/register" className="btn-primary">
+                    Get Started
+                  </Link>
+                </motion.div>
+              </>
+            )}
           </div>
 
           <motion.button
@@ -162,20 +175,33 @@ const Navbar = () => {
                 initial="closed"
                 animate="open"
               >
-                <Link
-                  to="/login"
-                  className="block py-2 text-dark-300 hover:text-white transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="btn-primary w-full"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Get Started
-                </Link>
+                {!isLoading && isAuthenticated ? (
+                  <Link
+                    to="/dashboard"
+                    className="btn-primary w-full flex items-center justify-center gap-2"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="block py-2 text-dark-300 hover:text-white transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="btn-primary w-full"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
               </motion.div>
             </div>
           </motion.div>

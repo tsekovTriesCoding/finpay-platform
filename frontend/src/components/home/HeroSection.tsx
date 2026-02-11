@@ -1,6 +1,7 @@
 import { ArrowRight, Play, Shield, Zap, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
 
 const fadeIn = {
   hidden: { opacity: 0 },
@@ -21,6 +22,8 @@ const staggerContainer = {
 };
 
 const HeroSection = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 bg-hero-pattern" />
@@ -78,8 +81,8 @@ const HeroSection = () => {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
             variants={slideUp}
           >
-            <Link to="/register" className="btn-primary text-lg px-8 py-4 w-full sm:w-auto">
-              Start Free Trial
+            <Link to={isAuthenticated ? "/dashboard" : "/register"} className="btn-primary text-lg px-8 py-4 w-full sm:w-auto">
+              {isAuthenticated ? 'Go to Dashboard' : 'Start Free Trial'}
               <ArrowRight className="w-5 h-5" />
             </Link>
             <motion.button
