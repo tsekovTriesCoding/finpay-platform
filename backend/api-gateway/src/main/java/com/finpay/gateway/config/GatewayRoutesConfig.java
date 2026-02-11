@@ -62,10 +62,10 @@ public class GatewayRoutesConfig {
     }
 
     @Bean
-    public RouterFunction<ServerResponse> transactionServiceRoute() {
-        return route("transaction-service")
+    public RouterFunction<ServerResponse> transactionDetailRoute() {
+        return route("transaction-detail")
                 .route(path("/api/v1/transactions/**"), HandlerFunctions.http())
-                .filter(lb("transaction-service"))
+                .filter(lb("payment-service"))
                 .build();
     }
 

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import type { BillCategory } from '../../api/billPaymentApi';
+import type { TransactionType } from '../../api/transactionDetailApi';
 import { BILL_CATEGORY_LABELS } from '../../api/billPaymentApi';
 import { useBillPayments } from '../../hooks';
 import { formatCurrency, statusBadgeClasses } from './utils';
@@ -53,13 +54,14 @@ const CATEGORY_COLORS: Record<BillCategory, string> = {
 
 interface RecentBillPaymentsProps {
   userId: string;
+  onTransactionSelect?: (type: TransactionType, id: string) => void;
 }
 
 /**
  * Self-contained recent bill payments list.
  * Owns its own query via `useBillPayments` - handles loading, error, and empty states.
  */
-export default function RecentBillPayments({ userId }: RecentBillPaymentsProps) {
+export default function RecentBillPayments({ userId, onTransactionSelect }: RecentBillPaymentsProps) {
   const { data, isLoading, isError, refetch } = useBillPayments(userId, 0, 5);
 
   if (isLoading) return <SectionSkeleton rows={3} />;
@@ -98,7 +100,8 @@ export default function RecentBillPayments({ userId }: RecentBillPaymentsProps) 
           return (
             <div
               key={bill.id}
-              className="flex items-center justify-between p-3 bg-dark-800/50 rounded-lg border border-dark-700/50"
+              onClick={() => onTransactionSelect?.('BILL_PAYMENT', bill.id)}
+              className="flex items-center justify-between p-3 bg-dark-800/50 rounded-lg border border-dark-700/50 cursor-pointer hover:bg-dark-800 hover:border-dark-600 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <div

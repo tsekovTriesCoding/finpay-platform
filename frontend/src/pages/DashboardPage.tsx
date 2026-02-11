@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
+import type { TransactionType } from '../api/transactionDetailApi';
 import { useAuth } from '../contexts/AuthContext';
 import {
   DashboardHeader,
@@ -15,6 +16,7 @@ import {
   RequestMoneyModal,
   PayBillModal,
   PendingRequestsPanel,
+  TransactionDetailSheet,
 } from '../components/payments';
 
 export default function DashboardPage() {
@@ -23,6 +25,21 @@ export default function DashboardPage() {
   const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
   const [isRequestMoneyOpen, setIsRequestMoneyOpen] = useState(false);
   const [isPayBillOpen, setIsPayBillOpen] = useState(false);
+
+  // Transaction detail sheet state
+  const [detailSheet, setDetailSheet] = useState<{
+    isOpen: boolean;
+    type: TransactionType | null;
+    id: string | null;
+  }>({ isOpen: false, type: null, id: null });
+
+  const openDetailSheet = useCallback((type: TransactionType, id: string) => {
+    setDetailSheet({ isOpen: true, type, id });
+  }, []);
+
+  const closeDetailSheet = useCallback(() => {
+    setDetailSheet({ isOpen: false, type: null, id: null });
+  }, []);
 
   if (!user) return null;
 
@@ -53,9 +70,9 @@ export default function DashboardPage() {
 
         <PendingRequestsPanel userId={user.id} />
 
-        <RecentTransfers userId={user.id} />
+        <RecentTransfers userId={user.id} onTransactionSelect={openDetailSheet} />
 
-        <RecentBillPayments userId={user.id} />
+        <RecentBillPayments userId={user.id} onTransactionSelect={openDetailSheet} />
 
         <div className="mt-8 text-center">
           <Link to="/" className="text-primary-400 hover:text-primary-300 text-sm">
@@ -80,6 +97,14 @@ export default function DashboardPage() {
       <PayBillModal
         isOpen={isPayBillOpen}
         onClose={() => setIsPayBillOpen(false)}
+        userId={user.id}
+      />
+
+      <TransactionDetailSheet
+        isOpen={detailSheet.isOpen}
+        onClose={closeDetailSheet}
+        transactionType={detailSheet.type}
+        transactionId={detailSheet.id}
         userId={user.id}
       />
     </div>
