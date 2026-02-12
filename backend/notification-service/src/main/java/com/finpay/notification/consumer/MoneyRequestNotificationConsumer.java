@@ -58,7 +58,9 @@ public class MoneyRequestNotificationConsumer {
                 case "REQUEST_DECLINED" -> notifyRequestDeclined(requester, payer, requestReference, amount, currency);
                 case "REQUEST_CANCELLED" -> notifyRequestCancelled(payer, requester, requestReference, amount, currency);
                 case "REQUEST_EXPIRED" -> notifyRequestExpired(requester, payer, requestReference, amount, currency);
-                case "REQUEST_COMPLETED" -> notifyRequestCompleted(requester, payer, requestReference, amount, currency, description);
+                // REQUEST_COMPLETED notifications are handled by TransferNotificationConsumer
+                // via the transfer-notifications topic to avoid duplicate messages.
+                case "REQUEST_COMPLETED" -> log.info("Skipping REQUEST_COMPLETED notification (handled by TransferNotificationConsumer)");
                 case "REQUEST_FAILED" -> notifyRequestFailed(requester, payer, requestReference, amount, currency, failureReason);
                 default -> log.warn("Unknown money request event type: {}", eventType);
             }
@@ -194,51 +196,8 @@ public class MoneyRequestNotificationConsumer {
         );
     }
 
-    // REQUEST_COMPLETED - Notify both
-
-    private void notifyRequestCompleted(UUID requesterUserId, UUID payerUserId,
-                                         String reference, BigDecimal amount,
-                                         String currency, String description) {
-        // Notify requester (received funds)
-        notificationService.createAndSendNotification(
-                requesterUserId,
-                Notification.NotificationType.TRANSFER_RECEIVED,
-                Notification.NotificationChannel.EMAIL,
-                "Payment Received - FinPay",
-                String.format("""
-                    Your money request has been fulfilled!
-                    
-                    Request Reference: %s
-                    Amount Received: %s %s
-                    Note: %s
-                    
-                    The funds have been added to your wallet.
-                    
-                    Best regards,
-                    The FinPay Team
-                    """, reference, amount, currency, description != null ? description : "N/A"),
-                null
-        );
-
-        notificationService.createAndSendNotification(
-                requesterUserId,
-                Notification.NotificationType.TRANSFER_RECEIVED,
-                Notification.NotificationChannel.IN_APP,
-                "Payment Received",
-                String.format("You received %s %s from your request!", amount, currency),
-                null
-        );
-
-        // Notify payer (sent funds)
-        notificationService.createAndSendNotification(
-                payerUserId,
-                Notification.NotificationType.TRANSFER_SENT,
-                Notification.NotificationChannel.IN_APP,
-                "Payment Sent",
-                String.format("You paid %s %s for a money request.", amount, currency),
-                null
-        );
-    }
+    // REQUEST_COMPLETED — notifications are now handled exclusively by
+    // TransferNotificationConsumer (transfer-notifications topic) to prevent duplicates.
 
     // REQUEST_FAILED - Notify both
 

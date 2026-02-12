@@ -15,11 +15,19 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
     List<Notification> findByUserId(UUID userId);
 
+    List<Notification> findByUserIdAndChannelOrderByCreatedAtDesc(UUID userId, Notification.NotificationChannel channel);
+
     Page<Notification> findByUserId(UUID userId, Pageable pageable);
+
+    Page<Notification> findByUserIdAndChannel(UUID userId, Notification.NotificationChannel channel, Pageable pageable);
 
     List<Notification> findByUserIdAndStatus(UUID userId, Notification.NotificationStatus status);
 
     List<Notification> findByUserIdAndReadAtIsNull(UUID userId);
+
+    List<Notification> findByUserIdAndChannelAndReadAtIsNullOrderByCreatedAtDesc(UUID userId, Notification.NotificationChannel channel);
+
+    long countByUserIdAndChannelAndReadAtIsNull(UUID userId, Notification.NotificationChannel channel);
 
     List<Notification> findByStatus(Notification.NotificationStatus status);
 

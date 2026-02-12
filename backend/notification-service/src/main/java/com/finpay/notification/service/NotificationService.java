@@ -128,27 +128,31 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> getNotificationsByUserId(UUID userId) {
-        return notificationRepository.findByUserId(userId).stream()
+        return notificationRepository.findByUserIdAndChannelOrderByCreatedAtDesc(
+                        userId, Notification.NotificationChannel.IN_APP).stream()
                 .map(notificationMapper::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<NotificationResponse> getNotificationsByUserId(UUID userId, Pageable pageable) {
-        return notificationRepository.findByUserId(userId, pageable)
+        return notificationRepository.findByUserIdAndChannel(
+                        userId, Notification.NotificationChannel.IN_APP, pageable)
                 .map(notificationMapper::toResponse);
     }
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> getUnreadNotifications(UUID userId) {
-        return notificationRepository.findByUserIdAndReadAtIsNull(userId).stream()
+        return notificationRepository.findByUserIdAndChannelAndReadAtIsNullOrderByCreatedAtDesc(
+                        userId, Notification.NotificationChannel.IN_APP).stream()
                 .map(notificationMapper::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public long getUnreadCount(UUID userId) {
-        return notificationRepository.countByUserIdAndReadAtIsNull(userId);
+        return notificationRepository.countByUserIdAndChannelAndReadAtIsNull(
+                userId, Notification.NotificationChannel.IN_APP);
     }
 
     public NotificationResponse markAsRead(UUID notificationId) {
@@ -159,14 +163,16 @@ public class NotificationService {
         notification.setStatus(Notification.NotificationStatus.READ);
         Notification updated = notificationRepository.save(notification);
 
-        long unreadCount = notificationRepository.countByUserIdAndReadAtIsNull(notification.getUserId());
+        long unreadCount = notificationRepository.countByUserIdAndChannelAndReadAtIsNull(
+                notification.getUserId(), Notification.NotificationChannel.IN_APP);
         webSocketNotificationService.pushUnreadCount(notification.getUserId(), unreadCount);
 
         return notificationMapper.toResponse(updated);
     }
 
     public void markAllAsRead(UUID userId) {
-        List<Notification> unread = notificationRepository.findByUserIdAndReadAtIsNull(userId);
+        List<Notification> unread = notificationRepository.findByUserIdAndChannelAndReadAtIsNullOrderByCreatedAtDesc(
+                userId, Notification.NotificationChannel.IN_APP);
         LocalDateTime now = LocalDateTime.now();
 
         unread.forEach(notification -> {
