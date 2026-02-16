@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@EnableKafka
 public class KafkaConfig {
 
     public static final String USER_EVENTS_TOPIC = "user-events";

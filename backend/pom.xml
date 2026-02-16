@@ -92,6 +92,12 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
+        <!-- Spring Retry (required for @RetryableTopic non-blocking retries) -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

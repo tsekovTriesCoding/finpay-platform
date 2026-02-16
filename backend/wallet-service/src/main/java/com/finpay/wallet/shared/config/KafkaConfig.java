@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@EnableKafka
 public class KafkaConfig {
 
     public static final String WALLET_COMMANDS_TOPIC = "wallet-commands";

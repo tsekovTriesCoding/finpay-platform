@@ -6,7 +6,14 @@ import com.finpay.notification.notification.Notification;
 import com.finpay.notification.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.DltStrategy;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.kafka.annotation.BackOff;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -17,6 +24,10 @@ import java.util.UUID;
  * Kafka consumer for money transfer notification events.
  * Listens to the transfer-notifications topic and sends notifications
  * to both sender and recipient.
+ *
+ * Configured with non-blocking retries and DLT:
+ * - 4 attempts with exponential backoff (1s, 2s, 4s)
+ * - Failed messages go to transfer-notifications-dlt
  */
 @Component
 @RequiredArgsConstructor
@@ -26,38 +37,47 @@ public class TransferNotificationConsumer {
     private final NotificationService notificationService;
     private final ObjectMapper kafkaObjectMapper;
 
+    @RetryableTopic(
+            attempts = "4",
+            backOff = @BackOff(delay = 1000, multiplier = 2, maxDelay = 10000),
+            dltStrategy = DltStrategy.FAIL_ON_ERROR,
+            include = {Exception.class}
+    )
     @KafkaListener(topics = "transfer-notifications", groupId = "notification-service-group")
-    public void consumeTransferNotification(String message) {
+    public void consumeTransferNotification(String message) throws Exception {
         log.info("Received transfer notification event: {}", message);
 
-        try {
-            Map<String, Object> event = kafkaObjectMapper.readValue(message, new TypeReference<>() {});
+        Map<String, Object> event = kafkaObjectMapper.readValue(message, new TypeReference<>() {});
 
-            String transferId = (String) event.get("transferId");
-            String transactionReference = (String) event.get("transactionReference");
-            String senderUserId = (String) event.get("senderUserId");
-            String recipientUserId = (String) event.get("recipientUserId");
-            Object amountObj = event.get("amount");
-            String currency = (String) event.get("currency");
-            String description = (String) event.get("description");
-            String sagaStep = (String) event.get("sagaStep");
+        String transferId = (String) event.get("transferId");
+        String transactionReference = (String) event.get("transactionReference");
+        String senderUserId = (String) event.get("senderUserId");
+        String recipientUserId = (String) event.get("recipientUserId");
+        Object amountObj = event.get("amount");
+        String currency = (String) event.get("currency");
+        String description = (String) event.get("description");
+        String sagaStep = (String) event.get("sagaStep");
 
-            if (senderUserId == null || recipientUserId == null) {
-                log.warn("Invalid transfer notification event: missing user IDs");
-                return;
-            }
-
-            BigDecimal amount = parseAmount(amountObj);
-
-            // Send notification to both sender and recipient
-            if ("SEND_NOTIFICATION".equals(sagaStep) || "COMPLETE".equals(sagaStep)) {
-                notifySender(UUID.fromString(senderUserId), transactionReference, amount, currency, description);
-                notifyRecipient(UUID.fromString(recipientUserId), transactionReference, amount, currency, description);
-            }
-
-        } catch (Exception e) {
-            log.error("Error processing transfer notification event: {}", e.getMessage(), e);
+        if (senderUserId == null || recipientUserId == null) {
+            log.warn("Invalid transfer notification event: missing user IDs");
+            return;
         }
+
+        BigDecimal amount = parseAmount(amountObj);
+
+        // Send notification to both sender and recipient
+        if ("SEND_NOTIFICATION".equals(sagaStep) || "COMPLETE".equals(sagaStep)) {
+            notifySender(UUID.fromString(senderUserId), transactionReference, amount, currency, description);
+            notifyRecipient(UUID.fromString(recipientUserId), transactionReference, amount, currency, description);
+        }
+    }
+
+    @DltHandler
+    public void handleDlt(ConsumerRecord<String, String> record,
+                          @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                          @Header(value = KafkaHeaders.EXCEPTION_MESSAGE, required = false) String errorMessage) {
+        log.error("DLT: Failed to process transfer notification after all retries. Topic: {}, Key: {}, Value: {}, Error: {}",
+                topic, record.key(), record.value(), errorMessage);
     }
 
     private BigDecimal parseAmount(Object amountObj) {
