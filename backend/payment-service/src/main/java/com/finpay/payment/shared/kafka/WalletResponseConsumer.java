@@ -8,7 +8,14 @@ import com.finpay.payment.transfer.MoneyTransferService;
 import com.finpay.payment.transfer.TransferSagaStepResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.DltStrategy;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.kafka.annotation.BackOff;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +25,11 @@ import java.util.UUID;
  * Kafka consumer for wallet response events.
  * Implements SAGA choreography pattern — acts as a thin router that delegates
  * all entity state management to the owning domain service.
- * <p>
+ *
+ * Configured with non-blocking retries and DLT:
+ * - 4 attempts with exponential backoff (1s, 2s, 4s)
+ * - Failed SAGA messages go to wallet-events-dlt
+ *
  * No repositories are accessed directly; each feature service owns its own data.
  */
 @Component
@@ -31,15 +42,28 @@ public class WalletResponseConsumer {
     private final BillPaymentService billPaymentService;
     private final ObjectMapper kafkaObjectMapper;
 
+    @RetryableTopic(
+            attempts = "4",
+            backOff = @BackOff(delay = 1000, multiplier = 2, maxDelay = 10000),
+            dltStrategy = DltStrategy.FAIL_ON_ERROR,
+            include = {Exception.class}
+    )
     @KafkaListener(topics = "wallet-events", groupId = "payment-service-wallet-consumer")
     @Transactional
-    public void handleWalletResponse(String message) {
-        try {
-            WalletResponseEvent event = kafkaObjectMapper.readValue(message, WalletResponseEvent.class);
-            processWalletResponse(event);
-        } catch (Exception e) {
-            log.error("Failed to process wallet response: {}", message, e);
-        }
+    public void handleWalletResponse(String message) throws Exception {
+        WalletResponseEvent event = kafkaObjectMapper.readValue(message, WalletResponseEvent.class);
+        processWalletResponse(event);
+    }
+
+    /**
+     * Dead Letter Topic handler for wallet response events that failed all retry attempts.
+     */
+    @DltHandler
+    public void handleDlt(ConsumerRecord<String, String> record,
+                          @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                          @Header(value = KafkaHeaders.EXCEPTION_MESSAGE, required = false) String errorMessage) {
+        log.error("DLT: Failed to process wallet response after all retries. Topic: {}, Key: {}, Value: {}, Error: {}",
+                topic, record.key(), record.value(), errorMessage);
     }
 
     private void processWalletResponse(WalletResponseEvent event) {

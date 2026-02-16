@@ -6,7 +6,14 @@ import com.finpay.notification.notification.Notification;
 import com.finpay.notification.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.DltStrategy;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.kafka.annotation.BackOff;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -20,33 +27,43 @@ public class UserEventConsumer {
     private final NotificationService notificationService;
     private final ObjectMapper kafkaObjectMapper;
 
+    @RetryableTopic(
+            attempts = "4",
+            backOff = @BackOff(delay = 1000, multiplier = 2, maxDelay = 10000),
+            dltStrategy = DltStrategy.FAIL_ON_ERROR,
+            include = {Exception.class}
+    )
     @KafkaListener(topics = "user-events", groupId = "notification-service-group")
-    public void consumeUserEvent(String message) {
+    public void consumeUserEvent(String message) throws Exception {
         log.info("Received user event: {}", message);
 
-        try {
-            Map<String, Object> event = kafkaObjectMapper.readValue(message, new TypeReference<>() {});
+        Map<String, Object> event = kafkaObjectMapper.readValue(message, new TypeReference<>() {});
 
-            String eventType = (String) event.get("eventType");
-            String userId = (String) event.get("userId");
-            String email = (String) event.get("email");
-            String firstName = (String) event.get("firstName");
+        String eventType = (String) event.get("eventType");
+        String userId = (String) event.get("userId");
+        String email = (String) event.get("email");
+        String firstName = (String) event.get("firstName");
 
-            if (userId == null || eventType == null) {
-                log.warn("Invalid user event received: missing required fields");
-                return;
-            }
-
-            switch (eventType) {
-                case "USER_CREATED" -> handleUserCreated(UUID.fromString(userId), email, firstName);
-                case "USER_EMAIL_VERIFIED" -> handleEmailVerified(UUID.fromString(userId), email, firstName);
-                case "USER_STATUS_CHANGED" -> handleStatusChanged(UUID.fromString(userId), email, firstName);
-                case "USER_UPDATED" -> handleUserUpdated(UUID.fromString(userId), firstName);
-                default -> log.debug("Ignoring user event type: {}", eventType);
-            }
-        } catch (Exception e) {
-            log.error("Error processing user event: {}", e.getMessage(), e);
+        if (userId == null || eventType == null) {
+            log.warn("Invalid user event received: missing required fields");
+            return;
         }
+
+        switch (eventType) {
+            case "USER_CREATED" -> handleUserCreated(UUID.fromString(userId), email, firstName);
+            case "USER_EMAIL_VERIFIED" -> handleEmailVerified(UUID.fromString(userId), email, firstName);
+            case "USER_STATUS_CHANGED" -> handleStatusChanged(UUID.fromString(userId), email, firstName);
+            case "USER_UPDATED" -> handleUserUpdated(UUID.fromString(userId), firstName);
+            default -> log.debug("Ignoring user event type: {}", eventType);
+        }
+    }
+
+    @DltHandler
+    public void handleDlt(ConsumerRecord<String, String> record,
+                          @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                          @Header(value = KafkaHeaders.EXCEPTION_MESSAGE, required = false) String errorMessage) {
+        log.error("DLT: Failed to process user event after all retries. Topic: {}, Key: {}, Value: {}, Error: {}",
+                topic, record.key(), record.value(), errorMessage);
     }
 
     private void handleUserCreated(UUID userId, String email, String firstName) {

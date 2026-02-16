@@ -1,6 +1,5 @@
 package com.finpay.user.kafka;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.user.config.KafkaConfig;
 import com.finpay.user.entity.User;
@@ -11,7 +10,14 @@ import com.finpay.user.repository.UserRepository;
 import com.finpay.user.service.UserEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.DltStrategy;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.kafka.annotation.BackOff;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
  * Consumes user registration events from auth-service.
  * Creates full user profiles when users register via auth-service.
  * Publishes USER_CREATED events for wallet-service to create wallets automatically.
+ *
+ * Configured with non-blocking retries and DLT:
+ * - 4 attempts with exponential backoff (1s, 2s, 4s)
+ * - Failed messages go to auth-events-dlt
  */
 @Component
 @RequiredArgsConstructor
@@ -30,17 +40,29 @@ public class AuthEventConsumer {
     private final UserEventProducer userEventProducer;
     private final UserMapper userMapper;
 
+    @RetryableTopic(
+            attempts = "4",
+            backOff = @BackOff(delay = 1000, multiplier = 2, maxDelay = 10000),
+            dltStrategy = DltStrategy.FAIL_ON_ERROR,
+            include = {Exception.class}
+    )
     @KafkaListener(topics = KafkaConfig.AUTH_EVENTS_TOPIC, groupId = "user-service-group")
     @Transactional
-    public void handleAuthEvent(String message) {
+    public void handleAuthEvent(String message) throws Exception {
         log.info("Received auth event: {}", message);
-        
-        try {
-            UserRegisteredEvent event = kafkaObjectMapper.readValue(message, UserRegisteredEvent.class);
-            handleUserRegistered(event);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to deserialize auth event: {}", message, e);
-        }
+        UserRegisteredEvent event = kafkaObjectMapper.readValue(message, UserRegisteredEvent.class);
+        handleUserRegistered(event);
+    }
+
+    /**
+     * Dead Letter Topic handler for auth events that failed all retry attempts.
+     */
+    @DltHandler
+    public void handleDlt(ConsumerRecord<String, String> record,
+                          @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                          @Header(value = KafkaHeaders.EXCEPTION_MESSAGE, required = false) String errorMessage) {
+        log.error("DLT: Failed to process auth event after all retries. Topic: {}, Key: {}, Value: {}, Error: {}",
+                topic, record.key(), record.value(), errorMessage);
     }
 
     private void handleUserRegistered(UserRegisteredEvent event) {

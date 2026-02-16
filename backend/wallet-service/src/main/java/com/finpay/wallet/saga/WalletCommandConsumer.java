@@ -11,9 +11,26 @@ import com.finpay.wallet.wallet.WalletService;
 import com.finpay.wallet.wallet.dto.WalletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.DltStrategy;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.kafka.annotation.BackOff;
 import org.springframework.stereotype.Component;
 
+/**
+ * Kafka consumer for wallet SAGA commands.
+ *
+ * Configured with non-blocking retries and Dead Letter Topic:
+ * - 4 attempts (1 initial + 3 retries) with exponential backoff (1s, 2s, 4s)
+ * - Business exceptions (InsufficientFunds, ResourceNotFound) are handled gracefully
+ *   by sending failure response events back to the SAGA orchestrator
+ * - Infrastructure exceptions (deserialization, DB connectivity) trigger retries
+ * - After all retries exhausted, messages go to wallet-commands-dlt
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -23,18 +40,31 @@ public class WalletCommandConsumer {
     private final WalletEventProducer eventProducer;
     private final ObjectMapper kafkaObjectMapper;
 
+    @RetryableTopic(
+            attempts = "4",
+            backOff = @BackOff(delay = 1000, multiplier = 2, maxDelay = 10000),
+            dltStrategy = DltStrategy.FAIL_ON_ERROR,
+            include = {Exception.class}
+    )
     @KafkaListener(topics = KafkaConfig.WALLET_COMMANDS_TOPIC, groupId = "wallet-service-group")
-    public void consumeWalletCommand(String message) {
+    public void consumeWalletCommand(String message) throws Exception {
         log.info("Received wallet command: {}", message);
-        try {
-            WalletCommandEvent command = kafkaObjectMapper.readValue(message, WalletCommandEvent.class);
-            log.info("Processing command: {} for user: {} correlationId: {}",
-                    command.command(), command.userId(), command.correlationId());
-            WalletResponseEvent response = processCommand(command);
-            eventProducer.publishWalletResponse(response);
-        } catch (Exception e) {
-            log.error("Error processing wallet command: {}", e.getMessage(), e);
-        }
+        WalletCommandEvent command = kafkaObjectMapper.readValue(message, WalletCommandEvent.class);
+        log.info("Processing command: {} for user: {} correlationId: {}",
+                command.command(), command.userId(), command.correlationId());
+        WalletResponseEvent response = processCommand(command);
+        eventProducer.publishWalletResponse(response);
+    }
+
+    /**
+     * Dead Letter Topic handler for wallet commands that failed all retry attempts.
+     */
+    @DltHandler
+    public void handleDlt(ConsumerRecord<String, String> record,
+                          @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                          @Header(value = KafkaHeaders.EXCEPTION_MESSAGE, required = false) String errorMessage) {
+        log.error("DLT: Failed to process wallet command after all retries. Topic: {}, Key: {}, Value: {}, Error: {}",
+                topic, record.key(), record.value(), errorMessage);
     }
 
     private WalletResponseEvent processCommand(WalletCommandEvent command) {

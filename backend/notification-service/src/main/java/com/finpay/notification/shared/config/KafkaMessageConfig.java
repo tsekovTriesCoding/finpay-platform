@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@EnableKafka
 public class KafkaMessageConfig {
 
     public static final String NOTIFICATION_PREFERENCE_EVENTS_TOPIC = "notification-preference-events";
