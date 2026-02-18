@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.notification.notification.Notification;
 import com.finpay.notification.notification.NotificationService;
+import com.finpay.notification.shared.idempotency.IdempotentConsumerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -36,6 +37,7 @@ public class TransferNotificationConsumer {
 
     private final NotificationService notificationService;
     private final ObjectMapper kafkaObjectMapper;
+    private final IdempotentConsumerService idempotentConsumer;
 
     @RetryableTopic(
             attempts = "4",
@@ -44,7 +46,13 @@ public class TransferNotificationConsumer {
             include = {Exception.class}
     )
     @KafkaListener(topics = "transfer-notifications", groupId = "notification-service-group")
-    public void consumeTransferNotification(String message) throws Exception {
+    public void consumeTransferNotification(String message,
+                                            @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey) throws Exception {
+        if (idempotentConsumer.isDuplicate(idempotencyKey)) {
+            log.info("Duplicate transfer notification detected, skipping: idempotencyKey={}", idempotencyKey);
+            return;
+        }
+
         log.info("Received transfer notification event: {}", message);
 
         Map<String, Object> event = kafkaObjectMapper.readValue(message, new TypeReference<>() {});
@@ -70,6 +78,8 @@ public class TransferNotificationConsumer {
             notifySender(UUID.fromString(senderUserId), transactionReference, amount, currency, description);
             notifyRecipient(UUID.fromString(recipientUserId), transactionReference, amount, currency, description);
         }
+
+        idempotentConsumer.markProcessed(idempotencyKey, "transfer-notification-consumer");
     }
 
     @DltHandler

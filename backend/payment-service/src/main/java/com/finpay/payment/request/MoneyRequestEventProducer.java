@@ -1,50 +1,33 @@
 package com.finpay.payment.request;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.payment.shared.config.KafkaConfig;
+import com.finpay.payment.shared.outbox.OutboxService;
 import com.finpay.payment.request.event.MoneyRequestEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
- * Kafka producer for money request lifecycle events.
- * Publishes to the money-request-events topic consumed by notification-service.
+ * Publishes money request lifecycle events via the Transactional Outbox Pattern.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class MoneyRequestEventProducer {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ObjectMapper kafkaObjectMapper;
+    private final OutboxService outboxService;
 
     public void publishRequestEvent(MoneyRequestEvent event) {
-        try {
-            String payload = kafkaObjectMapper.writeValueAsString(event);
-            CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(
-                    KafkaConfig.MONEY_REQUEST_EVENTS_TOPIC,
-                    event.requestId().toString(),
-                    payload
-            );
+        log.info("Saving money request event to outbox: {} for request: {}",
+                event.eventType(), event.requestId());
 
-            future.whenComplete((result, ex) -> {
-                if (ex == null) {
-                    log.info("Published money request event: {} for request: {} with offset: {}",
-                            event.eventType(), event.requestId(),
-                            result.getRecordMetadata().offset());
-                } else {
-                    log.error("Failed to publish money request event: {} for request: {}",
-                            event.eventType(), event.requestId(), ex);
-                }
-            });
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize money request event: {}", event, e);
-        }
+        outboxService.saveEvent(
+                "MoneyRequest",
+                event.requestId().toString(),
+                event.eventType().name(),
+                KafkaConfig.MONEY_REQUEST_EVENTS_TOPIC,
+                event.requestId().toString(),
+                event
+        );
     }
 }

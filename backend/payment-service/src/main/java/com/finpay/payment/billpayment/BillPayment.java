@@ -38,7 +38,7 @@ public class BillPayment {
     @Column(nullable = false, unique = true)
     private String transactionReference;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private BillCategory category;
 
@@ -66,7 +66,7 @@ public class BillPayment {
     @Column(precision = 19, scale = 4)
     private BigDecimal totalAmount;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private BillPaymentStatus status = BillPaymentStatus.PENDING;
@@ -87,7 +87,7 @@ public class BillPayment {
     @Builder.Default
     private boolean billerConfirmed = false;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private SagaStatus sagaStatus = SagaStatus.INITIATED;

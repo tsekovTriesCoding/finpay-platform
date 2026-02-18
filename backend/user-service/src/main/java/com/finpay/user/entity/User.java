@@ -58,14 +58,15 @@ public class User implements Persistable<UUID> {
     @Column(unique = true)
     private String phoneNumber;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(25)")
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @Column(columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private AuthProvider authProvider;
 

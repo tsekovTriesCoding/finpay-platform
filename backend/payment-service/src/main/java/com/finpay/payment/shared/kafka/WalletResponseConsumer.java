@@ -2,6 +2,7 @@ package com.finpay.payment.shared.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.payment.shared.event.WalletResponseEvent;
+import com.finpay.payment.shared.idempotency.IdempotentConsumerService;
 import com.finpay.payment.billpayment.BillPaymentService;
 import com.finpay.payment.request.MoneyRequestService;
 import com.finpay.payment.transfer.MoneyTransferService;
@@ -23,7 +24,7 @@ import java.util.UUID;
 
 /**
  * Kafka consumer for wallet response events.
- * Implements SAGA choreography pattern — acts as a thin router that delegates
+ * Implements SAGA choreography pattern - acts as a thin router that delegates
  * all entity state management to the owning domain service.
  *
  * Configured with non-blocking retries and DLT:
@@ -41,6 +42,7 @@ public class WalletResponseConsumer {
     private final MoneyRequestService requestService;
     private final BillPaymentService billPaymentService;
     private final ObjectMapper kafkaObjectMapper;
+    private final IdempotentConsumerService idempotentConsumer;
 
     @RetryableTopic(
             attempts = "4",
@@ -50,9 +52,17 @@ public class WalletResponseConsumer {
     )
     @KafkaListener(topics = "wallet-events", groupId = "payment-service-wallet-consumer")
     @Transactional
-    public void handleWalletResponse(String message) throws Exception {
+    public void handleWalletResponse(String message,
+                                     @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey) throws Exception {
+        if (idempotentConsumer.isDuplicate(idempotencyKey)) {
+            log.info("Duplicate wallet response detected, skipping: idempotencyKey={}", idempotencyKey);
+            return;
+        }
+
         WalletResponseEvent event = kafkaObjectMapper.readValue(message, WalletResponseEvent.class);
         processWalletResponse(event);
+
+        idempotentConsumer.markProcessed(idempotencyKey, "wallet-response-consumer");
     }
 
     /**

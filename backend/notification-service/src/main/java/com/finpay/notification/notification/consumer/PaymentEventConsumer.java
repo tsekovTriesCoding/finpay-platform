@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.notification.notification.Notification;
 import com.finpay.notification.notification.NotificationService;
+import com.finpay.notification.shared.idempotency.IdempotentConsumerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -27,6 +28,7 @@ public class PaymentEventConsumer {
 
     private final NotificationService notificationService;
     private final ObjectMapper kafkaObjectMapper;
+    private final IdempotentConsumerService idempotentConsumer;
 
     @RetryableTopic(
             attempts = "4",
@@ -35,7 +37,13 @@ public class PaymentEventConsumer {
             include = {Exception.class}
     )
     @KafkaListener(topics = "payment-events", groupId = "notification-service-group")
-    public void consumePaymentEvent(String message) throws Exception {
+    public void consumePaymentEvent(String message,
+                                    @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey) throws Exception {
+        if (idempotentConsumer.isDuplicate(idempotencyKey)) {
+            log.info("Duplicate payment event detected, skipping: idempotencyKey={}", idempotencyKey);
+            return;
+        }
+
         log.info("Received payment event: {}", message);
 
         Map<String, Object> event = kafkaObjectMapper.readValue(message, new TypeReference<>() {});
@@ -62,6 +70,8 @@ public class PaymentEventConsumer {
                 case "PAYMENT_REFUNDED" -> handlePaymentRefunded(UUID.fromString(userId), transactionReference, amount, currency);
                 default -> log.debug("Ignoring payment event type: {}", eventType);
             }
+
+        idempotentConsumer.markProcessed(idempotencyKey, "payment-event-consumer");
     }
 
     @DltHandler

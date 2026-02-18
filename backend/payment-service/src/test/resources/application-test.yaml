@@ -14,3 +14,8 @@ spring:
 eureka:
   client:
     enabled: false
+
+# Disable outbox polling during tests
+outbox:
+  poll-interval-ms: 999999999
+  cleanup-interval-ms: 999999999

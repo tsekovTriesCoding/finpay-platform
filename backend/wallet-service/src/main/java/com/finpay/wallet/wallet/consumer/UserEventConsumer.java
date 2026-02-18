@@ -2,6 +2,7 @@ package com.finpay.wallet.wallet.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.wallet.shared.event.UserEvent;
+import com.finpay.wallet.shared.idempotency.IdempotentConsumerService;
 import com.finpay.wallet.wallet.WalletService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class UserEventConsumer {
 
     private final WalletService walletService;
     private final ObjectMapper objectMapper;
+    private final IdempotentConsumerService idempotentConsumer;
 
     @RetryableTopic(
             attempts = "4",
@@ -38,7 +40,13 @@ public class UserEventConsumer {
             include = {Exception.class}
     )
     @KafkaListener(topics = "user-events", groupId = "wallet-service-user-consumer")
-    public void handleUserEvent(String message) throws Exception {
+    public void handleUserEvent(String message,
+                                @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey) throws Exception {
+        if (idempotentConsumer.isDuplicate(idempotencyKey)) {
+            log.info("Duplicate user event detected, skipping: idempotencyKey={}", idempotencyKey);
+            return;
+        }
+
         UserEvent event = objectMapper.readValue(message, UserEvent.class);
         log.info("Received user event: {} for userId: {}", event.eventType(), event.userId());
 
@@ -47,6 +55,8 @@ public class UserEventConsumer {
             case USER_DELETED -> handleUserDeleted(event);
             default -> log.debug("Ignoring user event type: {}", event.eventType());
         }
+
+        idempotentConsumer.markProcessed(idempotencyKey, "user-event-consumer");
     }
 
     /**

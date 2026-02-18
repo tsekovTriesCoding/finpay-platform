@@ -7,6 +7,7 @@ import com.finpay.wallet.shared.config.KafkaConfig;
 import com.finpay.wallet.shared.exception.InsufficientFundsException;
 import com.finpay.wallet.shared.exception.ResourceNotFoundException;
 import com.finpay.wallet.shared.exception.WalletException;
+import com.finpay.wallet.shared.idempotency.IdempotentConsumerService;
 import com.finpay.wallet.wallet.WalletService;
 import com.finpay.wallet.wallet.dto.WalletResponse;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class WalletCommandConsumer {
     private final WalletService walletService;
     private final WalletEventProducer eventProducer;
     private final ObjectMapper kafkaObjectMapper;
+    private final IdempotentConsumerService idempotentConsumer;
 
     @RetryableTopic(
             attempts = "4",
@@ -47,13 +49,21 @@ public class WalletCommandConsumer {
             include = {Exception.class}
     )
     @KafkaListener(topics = KafkaConfig.WALLET_COMMANDS_TOPIC, groupId = "wallet-service-group")
-    public void consumeWalletCommand(String message) throws Exception {
+    public void consumeWalletCommand(String message,
+                                     @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey) throws Exception {
+        if (idempotentConsumer.isDuplicate(idempotencyKey)) {
+            log.info("Duplicate wallet command detected, skipping: idempotencyKey={}", idempotencyKey);
+            return;
+        }
+
         log.info("Received wallet command: {}", message);
         WalletCommandEvent command = kafkaObjectMapper.readValue(message, WalletCommandEvent.class);
         log.info("Processing command: {} for user: {} correlationId: {}",
                 command.command(), command.userId(), command.correlationId());
         WalletResponseEvent response = processCommand(command);
         eventProducer.publishWalletResponse(response);
+
+        idempotentConsumer.markProcessed(idempotencyKey, "wallet-command-consumer");
     }
 
     /**

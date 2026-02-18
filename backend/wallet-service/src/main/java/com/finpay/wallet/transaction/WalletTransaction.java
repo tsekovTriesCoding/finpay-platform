@@ -22,7 +22,7 @@ public class WalletTransaction {
     @Column(nullable = false)
     private UUID userId;
 
-    @Column(nullable = false) @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)") @Enumerated(EnumType.STRING)
     private TransactionType type;
 
     @Column(nullable = false, precision = 19, scale = 4)
@@ -40,7 +40,7 @@ public class WalletTransaction {
     private String referenceId;
     private String description;
 
-    @Column(nullable = false) @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)") @Enumerated(EnumType.STRING)
     private TransactionStatus status;
 
     @CreationTimestamp @Column(nullable = false, updatable = false)

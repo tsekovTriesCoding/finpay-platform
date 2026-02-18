@@ -95,3 +95,8 @@ logging:
   level:
     com.finpay.auth: DEBUG
     org.springframework.security: DEBUG
+
+# Outbox Pattern Configuration
+outbox:
+  poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:500}
+  cleanup-interval-ms: ${OUTBOX_CLEANUP_INTERVAL_MS:600000}
