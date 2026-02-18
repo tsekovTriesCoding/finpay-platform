@@ -69,3 +69,8 @@ logging:
   level:
     com.finpay.payment: DEBUG
     org.springframework.kafka: INFO
+
+# Outbox Pattern Configuration
+outbox:
+  poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:500}
+  cleanup-interval-ms: ${OUTBOX_CLEANUP_INTERVAL_MS:600000}

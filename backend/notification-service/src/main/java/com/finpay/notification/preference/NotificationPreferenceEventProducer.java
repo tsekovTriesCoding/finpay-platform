@@ -1,48 +1,33 @@
 package com.finpay.notification.preference;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.notification.preference.event.NotificationPreferenceEvent;
 import com.finpay.notification.shared.config.KafkaMessageConfig;
+import com.finpay.notification.shared.outbox.OutboxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.CompletableFuture;
-
+/**
+ * Publishes notification preference events via the Transactional Outbox Pattern.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 public class NotificationPreferenceEventProducer {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ObjectMapper kafkaObjectMapper;
+    private final OutboxService outboxService;
 
     public void sendPreferenceEvent(NotificationPreferenceEvent event) {
-        try {
-            String payload = kafkaObjectMapper.writeValueAsString(event);
-            CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(
-                    KafkaMessageConfig.NOTIFICATION_PREFERENCE_EVENTS_TOPIC,
-                    event.userId().toString(),
-                    payload
-            );
+        log.info("Saving notification preference event to outbox: {} for user: {}",
+                event.eventType(), event.userId());
 
-            future.whenComplete((result, ex) -> {
-                if (ex == null) {
-                    log.info("Sent notification preference event: {} for user: {} with offset: {}",
-                            event.eventType(),
-                            event.userId(),
-                            result.getRecordMetadata().offset());
-                } else {
-                    log.error("Failed to send notification preference event for user: {}",
-                            event.userId(), ex);
-                }
-            });
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize notification preference event: {}", event, e);
-        }
+        outboxService.saveEvent(
+                "NotificationPreference",
+                event.userId().toString(),
+                event.eventType(),
+                KafkaMessageConfig.NOTIFICATION_PREFERENCE_EVENTS_TOPIC,
+                event.userId().toString(),
+                event
+        );
     }
 }

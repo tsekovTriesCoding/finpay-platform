@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.notification.notification.Notification;
 import com.finpay.notification.notification.NotificationService;
+import com.finpay.notification.shared.idempotency.IdempotentConsumerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -26,6 +27,7 @@ public class UserEventConsumer {
 
     private final NotificationService notificationService;
     private final ObjectMapper kafkaObjectMapper;
+    private final IdempotentConsumerService idempotentConsumer;
 
     @RetryableTopic(
             attempts = "4",
@@ -34,7 +36,13 @@ public class UserEventConsumer {
             include = {Exception.class}
     )
     @KafkaListener(topics = "user-events", groupId = "notification-service-group")
-    public void consumeUserEvent(String message) throws Exception {
+    public void consumeUserEvent(String message,
+                                 @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey) throws Exception {
+        if (idempotentConsumer.isDuplicate(idempotencyKey)) {
+            log.info("Duplicate user event detected, skipping: idempotencyKey={}", idempotencyKey);
+            return;
+        }
+
         log.info("Received user event: {}", message);
 
         Map<String, Object> event = kafkaObjectMapper.readValue(message, new TypeReference<>() {});
@@ -56,6 +64,8 @@ public class UserEventConsumer {
             case "USER_UPDATED" -> handleUserUpdated(UUID.fromString(userId), firstName);
             default -> log.debug("Ignoring user event type: {}", eventType);
         }
+
+        idempotentConsumer.markProcessed(idempotencyKey, "user-event-notification-consumer");
     }
 
     @DltHandler

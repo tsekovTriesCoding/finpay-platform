@@ -31,3 +31,8 @@ jwt:
 
 oauth2:
   redirect-uri: http://localhost:5173/oauth2/callback
+
+# Disable outbox polling during tests
+outbox:
+  poll-interval-ms: 999999999
+  cleanup-interval-ms: 999999999

@@ -99,3 +99,8 @@ notification:
     enabled: ${SMS_ENABLED:false}
   push:
     enabled: ${PUSH_ENABLED:false}
+
+# Outbox Pattern Configuration
+outbox:
+  poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:500}
+  cleanup-interval-ms: ${OUTBOX_CLEANUP_INTERVAL_MS:600000}

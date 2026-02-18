@@ -57,11 +57,12 @@ public class MoneyRequest {
 
     private String description;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
 
     /** SAGA status - only relevant once the request is approved and payment begins. */
+    @Column(columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private SagaStatus sagaStatus;
 

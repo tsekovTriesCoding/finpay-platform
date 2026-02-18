@@ -28,7 +28,7 @@ public class Wallet {
     @Column(nullable = false, length = 3)
     private String currency;
 
-    @Column(nullable = false) @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)") @Enumerated(EnumType.STRING)
     private WalletStatus status;
 
     @Version

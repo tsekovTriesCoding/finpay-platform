@@ -5,6 +5,7 @@ import com.finpay.user.config.KafkaConfig;
 import com.finpay.user.entity.User;
 import com.finpay.user.event.UserEvent;
 import com.finpay.user.event.UserRegisteredEvent;
+import com.finpay.user.idempotency.IdempotentConsumerService;
 import com.finpay.user.mapper.UserMapper;
 import com.finpay.user.repository.UserRepository;
 import com.finpay.user.service.UserEventProducer;
@@ -39,6 +40,7 @@ public class AuthEventConsumer {
     private final ObjectMapper kafkaObjectMapper;
     private final UserEventProducer userEventProducer;
     private final UserMapper userMapper;
+    private final IdempotentConsumerService idempotentConsumer;
 
     @RetryableTopic(
             attempts = "4",
@@ -48,10 +50,18 @@ public class AuthEventConsumer {
     )
     @KafkaListener(topics = KafkaConfig.AUTH_EVENTS_TOPIC, groupId = "user-service-group")
     @Transactional
-    public void handleAuthEvent(String message) throws Exception {
+    public void handleAuthEvent(String message,
+                                @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey) throws Exception {
+        if (idempotentConsumer.isDuplicate(idempotencyKey)) {
+            log.info("Duplicate auth event detected, skipping: idempotencyKey={}", idempotencyKey);
+            return;
+        }
+
         log.info("Received auth event: {}", message);
         UserRegisteredEvent event = kafkaObjectMapper.readValue(message, UserRegisteredEvent.class);
         handleUserRegistered(event);
+
+        idempotentConsumer.markProcessed(idempotencyKey, "auth-event-consumer");
     }
 
     /**

@@ -24,7 +24,7 @@ public class PaymentMethodEntity {
     @Column(nullable = false)
     private UUID userId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private MethodType type;
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.notification.notification.Notification;
 import com.finpay.notification.notification.NotificationService;
+import com.finpay.notification.shared.idempotency.IdempotentConsumerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -36,6 +37,7 @@ public class MoneyRequestNotificationConsumer {
 
     private final NotificationService notificationService;
     private final ObjectMapper kafkaObjectMapper;
+    private final IdempotentConsumerService idempotentConsumer;
 
     @RetryableTopic(
             attempts = "4",
@@ -44,7 +46,13 @@ public class MoneyRequestNotificationConsumer {
             include = {Exception.class}
     )
     @KafkaListener(topics = "money-request-events", groupId = "notification-service-group")
-    public void consumeMoneyRequestEvent(String message) throws Exception {
+    public void consumeMoneyRequestEvent(String message,
+                                         @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey) throws Exception {
+        if (idempotentConsumer.isDuplicate(idempotencyKey)) {
+            log.info("Duplicate money request event detected, skipping: idempotencyKey={}", idempotencyKey);
+            return;
+        }
+
         log.info("Received money request event: {}", message);
 
         Map<String, Object> event = kafkaObjectMapper.readValue(message, new TypeReference<>() {});
@@ -80,6 +88,8 @@ public class MoneyRequestNotificationConsumer {
             case "REQUEST_FAILED" -> notifyRequestFailed(requester, payer, requestReference, amount, currency, failureReason);
             default -> log.warn("Unknown money request event type: {}", eventType);
         }
+
+        idempotentConsumer.markProcessed(idempotencyKey, "money-request-notification-consumer");
     }
 
     @DltHandler

@@ -50,7 +50,7 @@ public class MoneyTransfer {
     private String description;
 
     /** Distinguishes direct sends from request-triggered payments. */
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private TransferType transferType = TransferType.SEND;
@@ -58,11 +58,11 @@ public class MoneyTransfer {
     /** When this transfer was created from a money request, stores the request ID. */
     private UUID sourceRequestId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private TransferStatus status;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private SagaStatus sagaStatus;
 
