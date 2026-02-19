@@ -9,10 +9,10 @@ import java.util.UUID;
 /**
  * Transactional Outbox entity.
  *
- * <p>Events are persisted in the same database transaction as the business
+ * Events are persisted in the same database transaction as the business
  * operation.  A background poller ({@link com.finpay.outbox.publisher.OutboxPublisher})
  * publishes them to Kafka and marks them as {@code SENT}, guaranteeing
- * at-least-once delivery without two-phase commits.</p>
+ * at-least-once delivery without two-phase commits.
  */
 @Entity
 @Table(name = "outbox_events", indexes = {

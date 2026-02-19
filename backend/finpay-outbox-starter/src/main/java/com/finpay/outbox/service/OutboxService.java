@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Saves {@link OutboxEvent} entries inside the current database transaction.
  *
- * <p>Business services call {@code saveEvent()} within their transactional
+ * Business services call {@code saveEvent()} within their transactional
  * methods; the background {@link com.finpay.outbox.publisher.OutboxPublisher}
- * then publishes them to Kafka asynchronously.</p>
+ * then publishes them to Kafka asynchronously.
  */
 @RequiredArgsConstructor
 @Slf4j

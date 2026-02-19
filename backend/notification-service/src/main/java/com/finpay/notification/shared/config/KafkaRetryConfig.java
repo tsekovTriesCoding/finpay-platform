@@ -14,13 +14,13 @@ import java.util.List;
 /**
  * Notification-service Kafka retry configuration.
  *
- * <p>Extends the shared {@link OutboxKafkaRetryConfig} from
+ * Extends the shared {@link OutboxKafkaRetryConfig} from
  * finpay-outbox-spring-boot-starter and adds {@code MailSendException}
  * to the blocking-retryable exceptions so transient mail-server failures
- * are retried in-line before falling through to retry topics.</p>
+ * are retried in-line before falling through to retry topics.
  *
- * <p>Also marks the {@code kafkaRetryTaskScheduler} as {@code @Primary}
- * to disambiguate from the WebSocket {@code messageBrokerTaskScheduler}.</p>
+ * Also marks the {@code kafkaRetryTaskScheduler} as {@code @Primary}
+ * to disambiguate from the WebSocket {@code messageBrokerTaskScheduler}.
  */
 @Configuration
 @EnableKafka

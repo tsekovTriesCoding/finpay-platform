@@ -14,10 +14,10 @@ import org.springframework.context.annotation.Primary;
  * message serialisation (Java-8 date/time support, lenient unknown
  * properties).
  *
- * <p>The bean is {@code @Primary} so it is picked up by default, but
+ * The bean is {@code @Primary} so it is picked up by default, but
  * any application-level {@code ObjectMapper} bean named
  * {@code kafkaObjectMapper} will take precedence thanks to
- * {@code @ConditionalOnMissingBean}.</p>
+ * {@code @ConditionalOnMissingBean}.
  */
 @Configuration
 public class OutboxKafkaMessageConfig {

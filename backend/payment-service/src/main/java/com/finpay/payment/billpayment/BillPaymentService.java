@@ -278,7 +278,7 @@ public class BillPaymentService {
     }
 
     /**
-     * Check existence by ID — used by WalletResponseConsumer to route SAGA events.
+     * Check existence by ID - used by WalletResponseConsumer to route SAGA events.
      */
     @Transactional(readOnly = true)
     public boolean existsById(UUID id) {

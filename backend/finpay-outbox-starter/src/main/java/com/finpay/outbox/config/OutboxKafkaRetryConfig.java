@@ -15,22 +15,22 @@ import java.util.List;
 /**
  * Base Kafka retry / DLT configuration shared across all FinPay services.
  *
- * <p>Combines blocking retries for transient infrastructure exceptions with
+ * Combines blocking retries for transient infrastructure exceptions with
  * non-blocking retries via retry topics.  Fatal serialisation errors skip
- * retries and go straight to the DLT.</p>
+ * retries and go straight to the DLT.
  *
- * <p>Registered as an {@code @AutoConfiguration} so that Spring processes
+ * Registered as an {@code @AutoConfiguration} so that Spring processes
  * the internal {@code @Bean} methods of {@link RetryTopicConfigurationSupport}.
  * Creating this class as a plain {@code @Bean} would skip those methods and
- * silently prevent {@code @RetryableTopic} listeners from starting.</p>
+ * silently prevent {@code @RetryableTopic} listeners from starting.
  *
- * <h3>Extensibility</h3>
- * <p>If a service needs additional blocking-retryable exceptions (e.g.
+ * Extensibility:
+ * If a service needs additional blocking-retryable exceptions (e.g.
  * {@code MailSendException} in notification-service) it can subclass this
  * class, override
  * {@link #additionalBlockingRetryExceptions()}, and declare the subclass
  * as a {@code @Configuration} bean.  The auto-configuration will back off
- * because of {@code @ConditionalOnMissingBean}.</p>
+ * because of {@code @ConditionalOnMissingBean}.
  */
 @AutoConfiguration
 @ConditionalOnMissingBean(RetryTopicConfigurationSupport.class)

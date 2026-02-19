@@ -232,7 +232,7 @@ public class TransactionDetailService {
                 bp.getTotalAmount(),
                 bp.getStatus().name(),
                 bp.getFailureReason(),
-                "Bill Payment — " + bp.getBillerName(),
+                "Bill Payment - " + bp.getBillerName(),
                 bp.getCategory().name() + " • " + bp.getAccountNumber(),
                 bp.getDescription(),
                 metadata,

@@ -158,7 +158,7 @@ public class MoneyTransferService {
     }
 
     /**
-     * Look up a transfer by ID — returns Optional for routing in WalletResponseConsumer.
+     * Look up a transfer by ID - returns Optional for routing in WalletResponseConsumer.
      */
     @Transactional(readOnly = true)
     public Optional<MoneyTransfer> findOptionalById(UUID id) {
@@ -170,7 +170,7 @@ public class MoneyTransferService {
     /**
      * Create a transfer record for an approved money request.
      * Persists the record, publishes a SAGA trace event, and starts
-     * SAGA Step 1 (reserve funds) — all in one atomic operation.
+     * SAGA Step 1 (reserve funds) - all in one atomic operation.
      *
      * @return the persisted MoneyTransfer so the caller can read its ID
      */
@@ -225,7 +225,7 @@ public class MoneyTransferService {
     // Called by WalletResponseConsumer to advance or compensate the transfer SAGA.
 
     /**
-     * SAGA Step 1 completed — funds reserved → send DEDUCT command.
+     * SAGA Step 1 completed - funds reserved → send DEDUCT command.
      */
     public void handleFundsReserved(UUID transferId, UUID walletId) {
         log.info("SAGA Step 1 completed: Funds reserved for transfer {}", transferId);
@@ -246,7 +246,7 @@ public class MoneyTransferService {
     }
 
     /**
-     * SAGA Step 2 completed — funds deducted → send CREDIT command.
+     * SAGA Step 2 completed - funds deducted → send CREDIT command.
      */
     public void handleFundsDeducted(UUID transferId) {
         log.info("SAGA Step 2 completed: Funds deducted for transfer {}", transferId);
@@ -264,7 +264,7 @@ public class MoneyTransferService {
     }
 
     /**
-     * SAGA Step 3 completed — funds credited → send notification and complete.
+     * SAGA Step 3 completed - funds credited → send notification and complete.
      *
      * @return result containing linked-request info for cross-feature coordination
      */
@@ -304,7 +304,7 @@ public class MoneyTransferService {
     }
 
     /**
-     * Handle SAGA failure — marks the transfer as FAILED and starts compensation.
+     * Handle SAGA failure - marks the transfer as FAILED and starts compensation.
      *
      * @return result containing linked-request info for cross-feature coordination
      */

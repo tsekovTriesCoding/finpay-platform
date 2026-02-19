@@ -18,12 +18,12 @@ import java.util.List;
 /**
  * Polling publisher for the Transactional Outbox Pattern.
  *
- * <p>Picks up {@code PENDING} outbox events, publishes them to Kafka with
+ * Picks up {@code PENDING} outbox events, publishes them to Kafka with
  * an {@code X-Idempotency-Key} header, and marks them as {@code SENT}.
  * A separate scheduled method cleans up old events and re-queues failed
- * ones that still have retries left.</p>
+ * ones that still have retries left.
  *
- * <p>Tuning knobs live in {@link OutboxProperties}.</p>
+ * Tuning knobs live in {@link OutboxProperties}.
  */
 @RequiredArgsConstructor
 @Slf4j

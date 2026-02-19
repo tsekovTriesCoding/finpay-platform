@@ -20,18 +20,17 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /**
  * Spring Boot auto-configuration for the FinPay Outbox + Idempotency starter.
  *
- * <p>Registers the following beans when the required infrastructure
- * (JPA, Kafka) is on the classpath:</p>
- * <ul>
- *   <li>{@link OutboxService} — save outbox events transactionally</li>
- *   <li>{@link OutboxPublisher} — poll &amp; publish pending events to Kafka</li>
- *   <li>{@link IdempotentConsumerService} — deduplicate incoming Kafka messages</li>
- *   <li>{@link OutboxKafkaMessageConfig} — pre-configured {@code ObjectMapper}</li>
- *   <li>{@link OutboxKafkaRetryConfig} — Kafka retry/DLT infrastructure</li>
- * </ul>
+ * Registers the following beans when the required infrastructure
+ * (JPA, Kafka) is on the classpath:
  *
- * <p>All beans are guarded by {@code @ConditionalOnMissingBean} so services
- * can override any of them if needed.</p>
+ * - {@link OutboxService} - save outbox events transactionally
+ * - {@link OutboxPublisher} - poll & publish pending events to Kafka
+ * - {@link IdempotentConsumerService} - deduplicate incoming Kafka messages
+ * - {@link OutboxKafkaMessageConfig} - pre-configured {@code ObjectMapper}
+ * - {@link OutboxKafkaRetryConfig} - Kafka retry/DLT infrastructure
+ *
+ * All beans are guarded by {@code @ConditionalOnMissingBean} so services
+ * can override any of them if needed.
  */
 @AutoConfiguration
 @AutoConfigurationPackage(basePackages = "com.finpay.outbox")

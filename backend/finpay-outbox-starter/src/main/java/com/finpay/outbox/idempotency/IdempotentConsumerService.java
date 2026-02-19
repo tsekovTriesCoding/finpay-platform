@@ -15,10 +15,10 @@ import java.time.LocalDateTime;
 /**
  * Provides idempotent message processing for Kafka consumers.
  *
- * <p>Before processing a message the consumer calls
+ * Before processing a message the consumer calls
  * {@link #isDuplicate(String)}; after successful processing it calls
  * {@link #markProcessed(String, String)}.  A scheduled cleanup task
- * removes stale records based on {@link OutboxProperties.Idempotency}.</p>
+ * removes stale records based on {@link OutboxProperties.Idempotency}.
  */
 @RequiredArgsConstructor
 @Slf4j
@@ -38,7 +38,7 @@ public class IdempotentConsumerService {
     }
 
     /**
-     * Record that the event has been processed.  Safe under concurrency —
+     * Record that the event has been processed.  Safe under concurrency -
      * a {@link DataIntegrityViolationException} on a duplicate insert is
      * silently swallowed.
      */

@@ -7,11 +7,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * Configuration properties for the FinPay Outbox + Idempotency starter.
  *
- * <p>All properties live under the {@code finpay.outbox.*} and
- * {@code finpay.idempotency.*} namespaces and have sensible defaults.</p>
+ * All properties live under the {@code finpay.outbox.*} and
+ * {@code finpay.idempotency.*} namespaces and have sensible defaults.
  *
- * <h3>Example {@code application.yml}</h3>
- * <pre>
+ * Example {@code application.yml}:
+ *
  * finpay:
  *   outbox:
  *     batch-size: 100
@@ -21,7 +21,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *   idempotency:
  *     cleanup-interval-ms: 3600000
  *     retention-days: 14
- * </pre>
  */
 @ConfigurationProperties(prefix = "finpay")
 @Getter

@@ -8,9 +8,9 @@ import java.time.LocalDateTime;
 /**
  * Tracks events that have been successfully processed by a Kafka consumer.
  *
- * <p>Used by {@link com.finpay.outbox.idempotency.IdempotentConsumerService}
+ * Used by {@link com.finpay.outbox.idempotency.IdempotentConsumerService}
  * to prevent duplicate processing when the outbox pattern guarantees
- * at-least-once delivery.</p>
+ * at-least-once delivery.
  */
 @Entity
 @Table(name = "processed_events", indexes = {

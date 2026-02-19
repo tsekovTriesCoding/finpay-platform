@@ -37,7 +37,7 @@ public class WebSocketNotificationService {
             );
             log.info("WebSocket push sent to user: {} notification: {}", userId, notification.id());
         } catch (Exception e) {
-            // WebSocket push is best-effort — don't fail the main notification flow
+            // WebSocket push is best-effort - don't fail the main notification flow
             log.warn("Failed to push notification via WebSocket to user {}: {}", userId, e.getMessage());
         }
     }

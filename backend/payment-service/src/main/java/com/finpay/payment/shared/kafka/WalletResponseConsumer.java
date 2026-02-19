@@ -137,7 +137,7 @@ public class WalletResponseConsumer {
         }
     }
 
-    // Bill Payment SAGA routing — already fully delegated to BillPaymentService
+    // Bill Payment SAGA routing - already fully delegated to BillPaymentService
 
     private void routeToBillPaymentSaga(UUID correlationId, WalletResponseEvent event) {
         log.info("Routing wallet response {} to bill payment saga: {}",
