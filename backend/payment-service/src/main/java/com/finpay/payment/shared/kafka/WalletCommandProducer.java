@@ -1,7 +1,7 @@
 package com.finpay.payment.shared.kafka;
 
 import com.finpay.payment.shared.event.WalletCommandEvent;
-import com.finpay.payment.shared.outbox.OutboxService;
+import com.finpay.outbox.service.OutboxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

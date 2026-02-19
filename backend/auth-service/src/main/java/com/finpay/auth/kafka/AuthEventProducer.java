@@ -2,7 +2,7 @@ package com.finpay.auth.kafka;
 
 import com.finpay.auth.config.KafkaConfig;
 import com.finpay.auth.event.UserRegisteredEvent;
-import com.finpay.auth.outbox.OutboxService;
+import com.finpay.outbox.service.OutboxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

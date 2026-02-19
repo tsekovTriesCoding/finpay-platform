@@ -5,7 +5,7 @@ import com.finpay.user.config.KafkaConfig;
 import com.finpay.user.entity.User;
 import com.finpay.user.event.UserEvent;
 import com.finpay.user.event.UserRegisteredEvent;
-import com.finpay.user.idempotency.IdempotentConsumerService;
+import com.finpay.outbox.idempotency.IdempotentConsumerService;
 import com.finpay.user.mapper.UserMapper;
 import com.finpay.user.repository.UserRepository;
 import com.finpay.user.service.UserEventProducer;

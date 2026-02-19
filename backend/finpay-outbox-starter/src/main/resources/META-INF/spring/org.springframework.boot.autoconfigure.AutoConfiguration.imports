@@ -1,0 +1,2 @@
+com.finpay.outbox.OutboxAutoConfiguration
+com.finpay.outbox.config.OutboxKafkaRetryConfig

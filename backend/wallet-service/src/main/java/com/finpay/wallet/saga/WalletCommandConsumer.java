@@ -7,7 +7,7 @@ import com.finpay.wallet.shared.config.KafkaConfig;
 import com.finpay.wallet.shared.exception.InsufficientFundsException;
 import com.finpay.wallet.shared.exception.ResourceNotFoundException;
 import com.finpay.wallet.shared.exception.WalletException;
-import com.finpay.wallet.shared.idempotency.IdempotentConsumerService;
+import com.finpay.outbox.idempotency.IdempotentConsumerService;
 import com.finpay.wallet.wallet.WalletService;
 import com.finpay.wallet.wallet.dto.WalletResponse;
 import lombok.RequiredArgsConstructor;

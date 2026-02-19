@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.notification.notification.Notification;
 import com.finpay.notification.notification.NotificationService;
-import com.finpay.notification.shared.idempotency.IdempotentConsumerService;
+import com.finpay.outbox.idempotency.IdempotentConsumerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
