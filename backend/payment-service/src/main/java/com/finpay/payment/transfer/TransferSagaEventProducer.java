@@ -1,7 +1,7 @@
 package com.finpay.payment.transfer;
 
 import com.finpay.payment.shared.config.KafkaConfig;
-import com.finpay.payment.shared.outbox.OutboxService;
+import com.finpay.outbox.service.OutboxService;
 import com.finpay.payment.transfer.event.TransferSagaEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

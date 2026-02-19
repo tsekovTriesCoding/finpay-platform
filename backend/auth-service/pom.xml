@@ -102,6 +102,12 @@
             <artifactId>spring-cloud-starter-config</artifactId>
         </dependency>
 
+        <!-- FinPay Outbox + Idempotency Starter -->
+        <dependency>
+            <groupId>com.finpay</groupId>
+            <artifactId>finpay-outbox-spring-boot-starter</artifactId>
+        </dependency>
+
         <!-- Kafka for event-driven messaging -->
         <dependency>
             <groupId>org.springframework.kafka</groupId>

@@ -2,7 +2,7 @@ package com.finpay.wallet.wallet.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.wallet.shared.event.UserEvent;
-import com.finpay.wallet.shared.idempotency.IdempotentConsumerService;
+import com.finpay.outbox.idempotency.IdempotentConsumerService;
 import com.finpay.wallet.wallet.WalletService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

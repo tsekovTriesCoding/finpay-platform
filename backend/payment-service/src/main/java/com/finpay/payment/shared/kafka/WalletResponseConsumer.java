@@ -2,7 +2,7 @@ package com.finpay.payment.shared.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.payment.shared.event.WalletResponseEvent;
-import com.finpay.payment.shared.idempotency.IdempotentConsumerService;
+import com.finpay.outbox.idempotency.IdempotentConsumerService;
 import com.finpay.payment.billpayment.BillPaymentService;
 import com.finpay.payment.request.MoneyRequestService;
 import com.finpay.payment.transfer.MoneyTransferService;

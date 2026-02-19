@@ -2,7 +2,7 @@ package com.finpay.notification.preference;
 
 import com.finpay.notification.preference.event.NotificationPreferenceEvent;
 import com.finpay.notification.shared.config.KafkaMessageConfig;
-import com.finpay.notification.shared.outbox.OutboxService;
+import com.finpay.outbox.service.OutboxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

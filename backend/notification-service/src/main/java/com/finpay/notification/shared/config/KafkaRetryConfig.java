@@ -1,57 +1,40 @@
 package com.finpay.notification.shared.config;
 
+import com.finpay.outbox.config.OutboxKafkaRetryConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.annotation.EnableKafka;
-import org.springframework.kafka.retrytopic.RetryTopicConfigurationSupport;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.List;
 
 /**
- * Global Kafka retry and Dead Letter Topic (DLT) configuration for notification-service.
+ * Notification-service Kafka retry configuration.
  *
- * Ensures notification delivery by retrying failed message processing with
- * combined blocking and non-blocking retries. Messages that fail all retries
- * are sent to topic-specific DLTs for investigation.
+ * <p>Extends the shared {@link OutboxKafkaRetryConfig} from
+ * finpay-outbox-spring-boot-starter and adds {@code MailSendException}
+ * to the blocking-retryable exceptions so transient mail-server failures
+ * are retried in-line before falling through to retry topics.</p>
  *
- * @see org.springframework.kafka.retrytopic.RetryTopicConfigurationSupport
+ * <p>Also marks the {@code kafkaRetryTaskScheduler} as {@code @Primary}
+ * to disambiguate from the WebSocket {@code messageBrokerTaskScheduler}.</p>
  */
 @Configuration
 @EnableKafka
 @Slf4j
-public class KafkaRetryConfig extends RetryTopicConfigurationSupport {
+public class KafkaRetryConfig extends OutboxKafkaRetryConfig {
 
     @Override
-    protected void configureBlockingRetries(BlockingRetriesConfigurer blockingRetries) {
-        blockingRetries
-                .retryOn(
-                        org.springframework.dao.TransientDataAccessException.class,
-                        org.springframework.dao.QueryTimeoutException.class,
-                        java.net.ConnectException.class,
-                        java.io.IOException.class,
-                        org.springframework.mail.MailSendException.class
-                )
-                .backOff(new FixedBackOff(1_000, 3));
-    }
-
-    @Override
-    protected void manageNonBlockingFatalExceptions(List<Class<? extends Throwable>> nonBlockingFatalExceptions) {
-        nonBlockingFatalExceptions.add(com.fasterxml.jackson.core.JsonProcessingException.class);
-        nonBlockingFatalExceptions.add(IllegalArgumentException.class);
-    }
-
-    @Override
-    protected void configureCustomizers(CustomizersConfigurer customizersConfigurer) {
-        customizersConfigurer.customizeErrorHandler(eh -> eh.setSeekAfterError(false));
+    protected List<Class<? extends Exception>> additionalBlockingRetryExceptions() {
+        return List.of(org.springframework.mail.MailSendException.class);
     }
 
     @Bean
     @Primary
+    @Override
     public TaskScheduler kafkaRetryTaskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(2);
