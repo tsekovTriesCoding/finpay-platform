@@ -17,11 +17,14 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
+  const anchorLinks = [
     { name: 'Features', href: '#features' },
     { name: 'Security', href: '#security' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'About', href: '#about' },
+  ];
+
+  const routeLinks = [
+    { name: 'Pricing', to: '/pricing' },
+    { name: 'About', to: '/about' },
   ];
 
   const menuVariants = {
@@ -73,7 +76,7 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
-            {navLinks.map((link, index) => (
+            {anchorLinks.map((link, index) => (
               <motion.a
                 key={link.name}
                 href={link.href}
@@ -85,6 +88,19 @@ const Navbar = () => {
               >
                 {link.name}
               </motion.a>
+            ))}
+            {routeLinks.map((link, index) => (
+              <motion.div
+                key={link.name}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: (anchorLinks.length + index) * 0.1 }}
+                whileHover={{ y: -2 }}
+              >
+                <Link to={link.to} className="nav-link">
+                  {link.name}
+                </Link>
+              </motion.div>
             ))}
           </div>
 
@@ -154,7 +170,7 @@ const Navbar = () => {
             exit="closed"
           >
             <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
-              {navLinks.map((link, index) => (
+              {anchorLinks.map((link, index) => (
                 <motion.a
                   key={link.name}
                   href={link.href}
@@ -168,10 +184,27 @@ const Navbar = () => {
                   {link.name}
                 </motion.a>
               ))}
+              {routeLinks.map((link, index) => (
+                <motion.div
+                  key={link.name}
+                  variants={linkVariants}
+                  custom={anchorLinks.length + index}
+                  initial="closed"
+                  animate="open"
+                >
+                  <Link
+                    to={link.to}
+                    className="block py-2 text-dark-300 hover:text-white transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                </motion.div>
+              ))}
               <motion.div
                 className="pt-4 border-t border-dark-800 space-y-3"
                 variants={linkVariants}
-                custom={navLinks.length}
+                custom={anchorLinks.length + routeLinks.length}
                 initial="closed"
                 animate="open"
               >

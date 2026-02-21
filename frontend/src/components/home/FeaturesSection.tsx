@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   ArrowRight
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
@@ -17,36 +18,42 @@ const features = [
     title: 'Virtual & Physical Cards',
     description: 'Issue unlimited virtual cards instantly. Physical cards delivered worldwide with custom branding options.',
     color: 'from-blue-500 to-cyan-400',
+    slug: 'virtual-cards',
   },
   {
     icon: Smartphone,
     title: 'Mobile-First Experience',
     description: 'Manage your finances on the go with our award-winning mobile app. Available on iOS and Android.',
     color: 'from-purple-500 to-pink-400',
+    slug: 'mobile',
   },
   {
     icon: Globe2,
     title: 'Global Payments',
     description: 'Send and receive money in 150+ countries. Multi-currency accounts with real exchange rates.',
     color: 'from-emerald-500 to-teal-400',
+    slug: 'global-payments',
   },
   {
     icon: LineChart,
     title: 'Advanced Analytics',
     description: 'Real-time insights and spending analytics. Track every transaction with detailed reports.',
     color: 'from-orange-500 to-amber-400',
+    slug: 'analytics',
   },
   {
     icon: Repeat,
     title: 'Recurring Payments',
     description: 'Automate your payments with smart scheduling. Never miss a bill or subscription again.',
     color: 'from-rose-500 to-red-400',
+    slug: 'recurring',
   },
   {
     icon: ShieldCheck,
     title: 'Fraud Protection',
     description: 'AI-powered fraud detection protects every transaction. Real-time alerts and instant card freezing.',
     color: 'from-indigo-500 to-violet-400',
+    slug: 'fraud-protection',
   },
 ];
 
@@ -121,14 +128,15 @@ const FeaturesSection = () => {
                 {feature.description}
               </p>
 
-              <motion.a
-                href="#"
-                className="inline-flex items-center gap-2 text-primary-400 font-medium text-sm"
-                whileHover={{ x: 5 }}
-              >
-                Learn more
-                <ArrowRight className="w-4 h-4" />
-              </motion.a>
+              <motion.div whileHover={{ x: 5 }}>
+                <Link
+                  to={`/features/${feature.slug}`}
+                  className="inline-flex items-center gap-2 text-primary-400 font-medium text-sm"
+                >
+                  Learn more
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </motion.div>
             </motion.div>
           ))}
         </motion.div>

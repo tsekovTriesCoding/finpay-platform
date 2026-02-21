@@ -85,6 +85,10 @@ export default {
           '0%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.3)' },
           '100%': { boxShadow: '0 0 40px rgba(99, 102, 241, 0.6)' },
         },
+        progress: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(400%)' },
+        },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
