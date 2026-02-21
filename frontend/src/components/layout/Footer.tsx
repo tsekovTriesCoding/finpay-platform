@@ -6,13 +6,13 @@ const Footer = () => {
 
   const footerLinks = {
     product: [
-      { name: 'Features', href: '#features' },
-      { name: 'Security', href: '#security' },
-      { name: 'Pricing', href: '#pricing' },
+      { name: 'Features', href: '/#features' },
+      { name: 'Security', href: '/#security' },
+      { name: 'Pricing', href: '/pricing' },
       { name: 'API Docs', href: '/docs' },
     ],
     company: [
-      { name: 'About', href: '#about' },
+      { name: 'About', href: '/about' },
       { name: 'Blog', href: '/blog' },
       { name: 'Careers', href: '/careers' },
       { name: 'Contact', href: '/contact' },
@@ -69,12 +69,12 @@ const Footer = () => {
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.href}
                     className="text-dark-400 hover:text-white text-sm transition-colors duration-200"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -85,12 +85,12 @@ const Footer = () => {
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.href}
                     className="text-dark-400 hover:text-white text-sm transition-colors duration-200"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -101,12 +101,12 @@ const Footer = () => {
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.href}
                     className="text-dark-400 hover:text-white text-sm transition-colors duration-200"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

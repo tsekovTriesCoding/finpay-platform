@@ -85,14 +85,12 @@ const HeroSection = () => {
               {isAuthenticated ? 'Go to Dashboard' : 'Start Free Trial'}
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <motion.button
-              className="btn-secondary text-lg px-8 py-4 w-full sm:w-auto group"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Play className="w-5 h-5 group-hover:text-primary-400 transition-colors" />
-              Watch Demo
-            </motion.button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Link to="/demo" className="btn-secondary text-lg px-8 py-4 w-full sm:w-auto group">
+                <Play className="w-5 h-5 group-hover:text-primary-400 transition-colors" />
+                Watch Demo
+              </Link>
+            </motion.div>
           </motion.div>
 
           <motion.div
