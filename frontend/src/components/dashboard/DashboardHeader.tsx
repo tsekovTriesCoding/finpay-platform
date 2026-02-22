@@ -1,8 +1,14 @@
-import { Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut, Zap, Sparkles, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import type { User } from '../../api/authApi';
 import { NotificationBell } from '../notifications';
+
+const PLAN_BADGE = {
+  STARTER:    { label: 'Starter',    icon: Zap,       className: 'bg-dark-700/60 text-dark-300' },
+  PRO:        { label: 'Pro',        icon: Sparkles,  className: 'bg-primary-500/15 text-primary-300' },
+  ENTERPRISE: { label: 'Enterprise', icon: Building2,  className: 'bg-secondary-500/15 text-secondary-300' },
+} as const;
 
 interface DashboardHeaderProps {
   user: User;
@@ -57,9 +63,21 @@ export default function DashboardHeader({ user, onLogout }: DashboardHeaderProps
                 )}
               </div>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium text-white">
-                  {user.firstName} {user.lastName}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-white">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  {(() => {
+                    const badge = PLAN_BADGE[user.plan];
+                    const Icon = badge.icon;
+                    return (
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${badge.className}`}>
+                        <Icon className="w-2.5 h-2.5" />
+                        {badge.label}
+                      </span>
+                    );
+                  })()}
+                </div>
                 <p className="text-xs text-dark-400">{user.email}</p>
               </div>
             </div>

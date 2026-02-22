@@ -52,6 +52,7 @@ public class UserEventConsumer {
 
         switch (event.eventType()) {
             case USER_CREATED -> handleUserCreated(event);
+            case USER_UPDATED, PLAN_UPGRADED -> handleUserUpdated(event);
             case USER_DELETED -> handleUserDeleted(event);
             default -> log.debug("Ignoring user event type: {}", event.eventType());
         }
@@ -72,9 +73,19 @@ public class UserEventConsumer {
     }
 
     private void handleUserCreated(UserEvent event) {
-        log.info("Creating wallet for new user: {} ({})", event.userId(), event.email());
-        walletService.getOrCreateWallet(event.userId());
-        log.info("Wallet created/verified for user: {}", event.userId());
+        log.info("Creating wallet for new user: {} ({}) with plan: {}", event.userId(), event.email(), event.plan());
+        walletService.getOrCreateWalletWithPlan(event.userId(), event.plan());
+        log.info("Wallet created/verified for user: {} on plan: {}", event.userId(), event.plan());
+    }
+
+    private void handleUserUpdated(UserEvent event) {
+        if (event.plan() == null || event.plan().isBlank()) {
+            log.debug("USER_UPDATED event for user {} has no plan change, skipping wallet update", event.userId());
+            return;
+        }
+        log.info("Upgrading wallet plan for user: {} to plan: {}", event.userId(), event.plan());
+        walletService.upgradePlan(event.userId(), event.plan());
+        log.info("Wallet plan upgraded for user: {} to {}", event.userId(), event.plan());
     }
 
     private void handleUserDeleted(UserEvent event) {

@@ -1,10 +1,14 @@
 package com.finpay.auth.service;
 
 import com.finpay.auth.dto.*;
+import com.finpay.auth.entity.AccountPlan;
 import com.finpay.auth.entity.RefreshToken;
 import com.finpay.auth.entity.UserCredential;
+import com.finpay.auth.event.PlanUpgradedEvent;
 import com.finpay.auth.event.UserRegisteredEvent;
+import com.finpay.auth.exception.InvalidPlanUpgradeException;
 import com.finpay.auth.exception.InvalidTokenException;
+import com.finpay.auth.exception.PlanAlreadyActiveException;
 import com.finpay.auth.exception.UserAlreadyExistsException;
 import com.finpay.auth.kafka.AuthEventProducer;
 import com.finpay.auth.repository.RefreshTokenRepository;
@@ -57,13 +61,14 @@ public class AuthService {
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .phoneNumber(request.phoneNumber())
+                .plan(request.plan())
                 .enabled(true)
                 .accountLocked(false)
                 .emailVerified(false)
                 .build();
 
         UserCredential savedCredential = credentialRepository.save(credential);
-        log.info("User registered successfully with ID: {}", savedCredential.getId());
+        log.info("User registered successfully with ID: {} on plan: {}", savedCredential.getId(), savedCredential.getPlan());
 
         // Publish event for user-service to create full profile
         UserRegisteredEvent event = UserRegisteredEvent.create(
@@ -71,7 +76,8 @@ public class AuthService {
                 savedCredential.getEmail(),
                 savedCredential.getFirstName(),
                 savedCredential.getLastName(),
-                savedCredential.getPhoneNumber()
+                savedCredential.getPhoneNumber(),
+                savedCredential.getPlan().name()
         );
         authEventProducer.publishUserRegistered(event);
 
@@ -208,9 +214,45 @@ public class AuthService {
                 null, null, null, null,  // Address fields - not stored in auth
                 credential.isEmailVerified(),
                 false,  // Phone verified - not tracked here
+                credential.getPlan() != null ? credential.getPlan().name() : "STARTER",
                 credential.getCreatedAt(),
                 credential.getUpdatedAt(),
                 credential.getLastLoginAt()
         );
+    }
+
+    /**
+     * Upgrades a user's subscription plan.
+     * Validates the upgrade path (can only go up: STARTER → PRO → ENTERPRISE).
+     * Publishes a PLAN_UPGRADED event for downstream services.
+     */
+    public UpgradePlanResponse upgradePlan(UUID userId, UpgradePlanRequest request) {
+        UserCredential credential = credentialRepository.findById(userId)
+                .orElseThrow(() -> new InvalidTokenException("User not found"));
+
+        AccountPlan currentPlan = credential.getPlan();
+        AccountPlan newPlan = request.newPlan();
+
+        if (currentPlan == newPlan) {
+            throw new PlanAlreadyActiveException("You are already on the " + newPlan.name() + " plan");
+        }
+
+        if (currentPlan.ordinal() >= newPlan.ordinal()) {
+            throw new InvalidPlanUpgradeException(
+                    "Cannot downgrade from " + currentPlan.name() + " to " + newPlan.name()
+                            + ". Only upgrades are allowed.");
+        }
+
+        String previousPlanName = currentPlan.name();
+        credential.setPlan(newPlan);
+        credentialRepository.save(credential);
+
+        log.info("User {} upgraded plan: {} → {}", userId, previousPlanName, newPlan.name());
+
+        PlanUpgradedEvent event = PlanUpgradedEvent.create(
+                userId, credential.getEmail(), previousPlanName, newPlan.name());
+        authEventProducer.publishPlanUpgraded(event);
+
+        return UpgradePlanResponse.success(userId.toString(), previousPlanName, newPlan.name());
     }
 }

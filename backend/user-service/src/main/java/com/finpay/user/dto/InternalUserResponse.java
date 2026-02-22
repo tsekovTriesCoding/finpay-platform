@@ -26,6 +26,7 @@ public record InternalUserResponse(
         String postalCode,
         boolean emailVerified,
         boolean phoneVerified,
+        String plan,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime lastLoginAt
@@ -49,6 +50,7 @@ public record InternalUserResponse(
                 user.getPostalCode(),
                 user.isEmailVerified(),
                 user.isPhoneVerified(),
+                user.getPlan() != null ? user.getPlan().name() : "STARTER",
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 user.getLastLoginAt()

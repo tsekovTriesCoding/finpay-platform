@@ -43,4 +43,18 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Extracts a human-readable error message from an Axios error.
+ * Prefers the backend's `message` field (from GlobalExceptionHandler ErrorResponse),
+ * falls back to Axios's generic message, then a default string.
+ */
+export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const data = (error as { response?: { data?: { message?: string } } }).response?.data;
+    if (data?.message) return data.message;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
 export default api;

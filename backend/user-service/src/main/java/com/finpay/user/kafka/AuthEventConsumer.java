@@ -3,6 +3,7 @@ package com.finpay.user.kafka;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.user.config.KafkaConfig;
 import com.finpay.user.entity.User;
+import com.finpay.user.event.PlanUpgradedEvent;
 import com.finpay.user.event.UserEvent;
 import com.finpay.user.event.UserRegisteredEvent;
 import com.finpay.outbox.idempotency.IdempotentConsumerService;
@@ -51,15 +52,26 @@ public class AuthEventConsumer {
     @KafkaListener(topics = KafkaConfig.AUTH_EVENTS_TOPIC, groupId = "user-service-group")
     @Transactional
     public void handleAuthEvent(String message,
-                                @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey) throws Exception {
+                                @Header(value = "X-Idempotency-Key", required = false) String idempotencyKey,
+                                @Header(value = "X-Event-Type", required = false) String eventType) throws Exception {
         if (idempotentConsumer.isDuplicate(idempotencyKey)) {
             log.info("Duplicate auth event detected, skipping: idempotencyKey={}", idempotencyKey);
             return;
         }
 
-        log.info("Received auth event: {}", message);
-        UserRegisteredEvent event = kafkaObjectMapper.readValue(message, UserRegisteredEvent.class);
-        handleUserRegistered(event);
+        log.info("Received auth event: type={}, payload={}", eventType, message);
+
+        switch (eventType != null ? eventType : "USER_REGISTERED") {
+            case "USER_REGISTERED" -> {
+                UserRegisteredEvent event = kafkaObjectMapper.readValue(message, UserRegisteredEvent.class);
+                handleUserRegistered(event);
+            }
+            case "PLAN_UPGRADED" -> {
+                PlanUpgradedEvent event = kafkaObjectMapper.readValue(message, PlanUpgradedEvent.class);
+                handlePlanUpgraded(event);
+            }
+            default -> log.warn("Unknown auth event type: {}", eventType);
+        }
 
         idempotentConsumer.markProcessed(idempotencyKey, "auth-event-consumer");
     }
@@ -99,6 +111,16 @@ public class AuthEventConsumer {
             };
         }
         
+        // Determine account plan
+        User.AccountPlan accountPlan = User.AccountPlan.STARTER;
+        if (event.plan() != null) {
+            try {
+                accountPlan = User.AccountPlan.valueOf(event.plan());
+            } catch (IllegalArgumentException e) {
+                log.warn("Unknown plan '{}' for user {}, defaulting to STARTER", event.plan(), event.userId());
+            }
+        }
+        
         // Create user profile
         User user = User.builder()
                 .id(event.userId())
@@ -112,6 +134,7 @@ public class AuthEventConsumer {
                 .authProvider(authProvider)
                 .providerId(event.oauthProviderId())
                 .profileImageUrl(event.profileImageUrl())
+                .plan(accountPlan)
                 .emailVerified(event.isOAuthUser())  // OAuth users have verified email
                 .phoneVerified(false)
                 .build();
@@ -123,5 +146,33 @@ public class AuthEventConsumer {
         UserEvent userEvent = userMapper.toEvent(savedUser, UserEvent.EventType.USER_CREATED);
         userEventProducer.sendUserEvent(userEvent);
         log.info("Published USER_CREATED event for user: {}", savedUser.getId());
+    }
+
+    private void handlePlanUpgraded(PlanUpgradedEvent event) {
+        log.info("Processing plan upgrade event for user: {} ({} -> {})",
+                event.userId(), event.previousPlan(), event.newPlan());
+
+        User user = userRepository.findById(event.userId()).orElse(null);
+        if (user == null) {
+            log.warn("User {} not found for plan upgrade, skipping", event.userId());
+            return;
+        }
+
+        User.AccountPlan newPlan;
+        try {
+            newPlan = User.AccountPlan.valueOf(event.newPlan());
+        } catch (IllegalArgumentException e) {
+            log.error("Unknown plan '{}' in plan upgrade event for user {}", event.newPlan(), event.userId());
+            return;
+        }
+
+        user.setPlan(newPlan);
+        User updatedUser = userRepository.save(user);
+        log.info("Updated user {} plan to {}", updatedUser.getId(), newPlan);
+
+        // Publish PLAN_UPGRADED event for wallet-service and notification-service
+        UserEvent userEvent = userMapper.toEvent(updatedUser, UserEvent.EventType.PLAN_UPGRADED);
+        userEventProducer.sendUserEvent(userEvent);
+        log.info("Published PLAN_UPGRADED event for user: {}", updatedUser.getId());
     }
 }

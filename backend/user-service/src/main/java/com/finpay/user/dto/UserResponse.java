@@ -20,6 +20,7 @@ public record UserResponse(
         String postalCode,
         boolean emailVerified,
         boolean phoneVerified,
+        User.AccountPlan plan,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime lastLoginAt
@@ -40,6 +41,7 @@ public record UserResponse(
                 user.getPostalCode(),
                 user.isEmailVerified(),
                 user.isPhoneVerified(),
+                user.getPlan(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 user.getLastLoginAt()

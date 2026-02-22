@@ -8,6 +8,7 @@ public record UserEvent(
         String email,
         String firstName,
         String lastName,
+        String plan,
         EventType eventType,
         LocalDateTime timestamp
 ) {
@@ -17,6 +18,7 @@ public record UserEvent(
         USER_DELETED,
         USER_STATUS_CHANGED,
         USER_EMAIL_VERIFIED,
-        USER_PHONE_VERIFIED
+        USER_PHONE_VERIFIED,
+        PLAN_UPGRADED
     }
 }

@@ -19,6 +19,7 @@ public interface UserMapper {
     @Mapping(target = "providerId", ignore = true)
     @Mapping(target = "status", constant = "PENDING_VERIFICATION")
     @Mapping(target = "role", constant = "USER")
+    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "emailVerified", constant = "false")
     @Mapping(target = "phoneVerified", constant = "false")
     @Mapping(target = "createdAt", ignore = true)
@@ -35,6 +36,7 @@ public interface UserMapper {
     @Mapping(target = "providerId", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "role", ignore = true)
+    @Mapping(target = "plan", ignore = true)
     @Mapping(target = "emailVerified", ignore = true)
     @Mapping(target = "phoneVerified", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -43,6 +45,7 @@ public interface UserMapper {
     void updateEntityFromRequest(UserRequest request, @MappingTarget User user);
 
     @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "plan", expression = "java(user.getPlan() != null ? user.getPlan().name() : \"STARTER\")")
     @Mapping(target = "timestamp", expression = "java(java.time.LocalDateTime.now())")
     UserEvent toEvent(User user, UserEvent.EventType eventType);
 }

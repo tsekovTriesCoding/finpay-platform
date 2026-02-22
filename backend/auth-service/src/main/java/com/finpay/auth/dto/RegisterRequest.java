@@ -1,7 +1,9 @@
 package com.finpay.auth.dto;
 
+import com.finpay.auth.entity.AccountPlan;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
@@ -21,5 +23,8 @@ public record RegisterRequest(
         @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
         String lastName,
 
-        String phoneNumber
+        String phoneNumber,
+
+        @NotNull(message = "Account plan is required")
+        AccountPlan plan
 ) {}

@@ -6,7 +6,7 @@ export { billPaymentService, BILLERS, BILL_CATEGORY_LABELS } from './billPayment
 export { notificationService } from './notificationApi';
 export { userService } from './userApi';
 export { transactionDetailService } from './transactionDetailApi';
-export type { RegisterData, LoginData, User, AuthResponse } from './authApi';
+ export type { RegisterData, LoginData, User, AuthResponse, AccountPlan, UpgradePlanRequest, UpgradePlanResponse } from './authApi';
 export type { UpdateProfileRequest, ProfileImageResponse } from './userApi';
 export type { 
   UserSearchResult, 

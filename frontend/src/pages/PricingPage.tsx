@@ -1,8 +1,9 @@
-import { Check, ArrowRight, Sparkles, Zap, Building2 } from 'lucide-react';
+import { Check, ArrowRight, Sparkles, Zap, Building2, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 import { useAuth } from '../contexts/AuthContext';
+import type { AccountPlan } from '../api/authApi';
 
 const plans = [
   {
@@ -74,7 +75,11 @@ const itemVariants = {
 };
 
 const PricingPage = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+
+  const currentPlan = user?.plan ?? 'STARTER';
+  const planOrder: AccountPlan[] = ['STARTER', 'PRO', 'ENTERPRISE'];
+  const currentPlanIndex = planOrder.indexOf(currentPlan);
 
   return (
     <div className="pt-24 pb-16">
@@ -150,17 +155,48 @@ const PricingPage = () => {
                 ))}
               </ul>
 
-              <Link
-                to={plan.name === 'Enterprise' ? '/contact' : isAuthenticated ? '/dashboard' : '/register'}
-                className={`${plan.popular ? 'btn-primary' : 'btn-secondary'} w-full`}
-              >
-                {plan.cta}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {(() => {
+                const planKey = plan.name.toUpperCase() as AccountPlan;
+                const thisPlanIndex = planOrder.indexOf(planKey);
+
+                if (isAuthenticated && thisPlanIndex <= currentPlanIndex) {
+                  return (
+                    <button
+                      disabled
+                      className="btn-secondary w-full opacity-60 cursor-not-allowed"
+                    >
+                      {thisPlanIndex === currentPlanIndex ? 'Current Plan' : 'Included'}
+                    </button>
+                  );
+                }
+
+                if (isAuthenticated && thisPlanIndex > currentPlanIndex) {
+                  return (
+                    <Link
+                      to="/settings?tab=plan"
+                      className={`${plan.popular ? 'btn-primary' : 'btn-secondary'} w-full`}
+                    >
+                      <Settings className="w-4 h-4" />
+                      Manage Plan
+                    </Link>
+                  );
+                }
+
+                return (
+                  <Link
+                    to={`/register?plan=${plan.name.toUpperCase()}`}
+                    className={`${plan.popular ? 'btn-primary' : 'btn-secondary'} w-full`}
+                  >
+                    {plan.cta}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                );
+              })()}
             </motion.div>
           ))}
         </motion.div>
       </section>
+
     </div>
   );
 };

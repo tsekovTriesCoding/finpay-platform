@@ -51,6 +51,8 @@ public class OutboxPublisher {
                         event.getTopic(), null, event.getEventKey(), event.getPayload());
                 record.headers().add("X-Idempotency-Key",
                         event.getId().toString().getBytes(StandardCharsets.UTF_8));
+                record.headers().add("X-Event-Type",
+                        event.getEventType().getBytes(StandardCharsets.UTF_8));
                 kafkaTemplate.send(record)
                         .get();
 

@@ -16,6 +16,7 @@ public record UserRegisteredEvent(
         String oauthProvider,
         String oauthProviderId,
         String profileImageUrl,
+        String plan,
         LocalDateTime timestamp
 ) {
     public boolean isOAuthUser() {

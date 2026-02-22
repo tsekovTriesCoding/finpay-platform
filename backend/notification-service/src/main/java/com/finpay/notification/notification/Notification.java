@@ -77,6 +77,7 @@ public class Notification {
         TRANSFER_SENT,
         TRANSFER_RECEIVED,
         ACCOUNT_UPDATE,
+        PLAN_UPGRADED,
         SECURITY_ALERT,
         PROMOTIONAL,
         SYSTEM

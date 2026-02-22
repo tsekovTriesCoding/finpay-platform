@@ -1,23 +1,35 @@
-import { useState, useCallback } from 'react';
-import { ArrowLeft, User, Bell } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { ArrowLeft, User, Bell, CreditCard } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAuth } from '../contexts/AuthContext';
 import { DashboardHeader } from '../components/dashboard';
-import { ProfileTab, NotificationPreferencesTab } from '../components/settings';
+import { ProfileTab, NotificationPreferencesTab, PlanBillingTab } from '../components/settings';
 
-type SettingsTab = 'profile' | 'notifications';
+type SettingsTab = 'profile' | 'plan' | 'notifications';
 
 const TABS: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
+  { id: 'plan', label: 'Plan & Billing', icon: <CreditCard className="w-4 h-4" /> },
   { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
 ];
 
 export default function SettingsPage() {
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
+    const tab = searchParams.get('tab');
+    return tab === 'plan' || tab === 'notifications' ? tab : 'profile';
+  });
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'plan' || tab === 'notifications') {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const handleProfileUpdated = useCallback(async () => {
     await refreshUser();
@@ -77,6 +89,12 @@ export default function SettingsPage() {
               key="profile"
               user={user}
               onProfileUpdated={handleProfileUpdated}
+            />
+          )}
+          {activeTab === 'plan' && (
+            <PlanBillingTab
+              key="plan"
+              currentPlan={user.plan}
             />
           )}
           {activeTab === 'notifications' && (
