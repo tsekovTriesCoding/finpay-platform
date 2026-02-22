@@ -8,6 +8,12 @@ export interface Wallet {
   availableBalance: number;
   currency: string;
   status: 'ACTIVE' | 'FROZEN' | 'CLOSED';
+  plan: 'STARTER' | 'PRO' | 'ENTERPRISE';
+  dailyTransactionLimit: number;
+  monthlyTransactionLimit: number;
+  maxVirtualCards: number;
+  multiCurrencyEnabled: boolean;
+  apiAccessEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -51,6 +51,11 @@ public class UserCredential {
     private String oauthProviderId;
     private String profileImageUrl;
 
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private AccountPlan plan = AccountPlan.STARTER;
+
     private LocalDateTime lastLoginAt;
 
     @CreationTimestamp

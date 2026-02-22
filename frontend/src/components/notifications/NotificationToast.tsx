@@ -11,6 +11,7 @@ import {
   Bell,
   Megaphone,
   ServerCrash,
+  Sparkles,
   X,
 } from 'lucide-react';
 
@@ -47,6 +48,8 @@ function getNotificationMeta(type: NotificationType) {
       return { Icon: ServerCrash, color: 'text-dark-300', bg: 'bg-dark-600/50' };
     case 'ACCOUNT_UPDATE':
       return { Icon: Bell, color: 'text-primary-400', bg: 'bg-primary-500/20' };
+    case 'PLAN_UPGRADED':
+      return { Icon: Sparkles, color: 'text-amber-400', bg: 'bg-amber-500/20' };
     default:
       return { Icon: Bell, color: 'text-dark-400', bg: 'bg-dark-600/50' };
   }

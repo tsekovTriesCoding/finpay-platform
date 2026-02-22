@@ -1,11 +1,14 @@
 import api, { API_GATEWAY_URL } from './axios';
 
+export type AccountPlan = 'STARTER' | 'PRO' | 'ENTERPRISE';
+
 export interface RegisterData {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
   phoneNumber?: string;
+  plan: AccountPlan;
 }
 
 export interface LoginData {
@@ -28,6 +31,7 @@ export interface User {
   postalCode: string | null;
   emailVerified: boolean;
   phoneVerified: boolean;
+  plan: AccountPlan;
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string | null;
@@ -39,6 +43,17 @@ export interface AuthResponse {
   tokenType: string;
   expiresIn: number;
   user: User;
+}
+
+export interface UpgradePlanRequest {
+  newPlan: AccountPlan;
+}
+
+export interface UpgradePlanResponse {
+  userId: string;
+  previousPlan: AccountPlan;
+  newPlan: AccountPlan;
+  message: string;
 }
 
 export const authService = {
@@ -69,6 +84,11 @@ export const authService = {
 
   getCurrentUser: async (): Promise<User> => {
     const response = await api.get<User>('/api/v1/auth/me');
+    return response.data;
+  },
+
+  upgradePlan: async (data: UpgradePlanRequest): Promise<UpgradePlanResponse> => {
+    const response = await api.put<UpgradePlanResponse>('/api/v1/auth/plan', data);
     return response.data;
   },
 

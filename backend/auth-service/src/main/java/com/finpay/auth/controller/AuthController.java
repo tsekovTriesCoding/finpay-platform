@@ -103,6 +103,23 @@ public class AuthController {
         return ResponseEntity.ok(user);
     }
 
+    @PutMapping("/plan")
+    public ResponseEntity<UpgradePlanResponse> upgradePlan(
+            @Valid @RequestBody UpgradePlanRequest request,
+            HttpServletRequest httpRequest) {
+        String token = extractAccessTokenFromCookie(httpRequest);
+        if (token == null) {
+            token = extractTokenFromHeader(httpRequest);
+        }
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        UUID userId = jwtService.extractUserIdAsUUID(token);
+        UpgradePlanResponse response = authService.upgradePlan(userId, request);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/validate")
     public ResponseEntity<Map<String, Object>> validateToken(HttpServletRequest request) {
         String token = extractAccessTokenFromCookie(request);

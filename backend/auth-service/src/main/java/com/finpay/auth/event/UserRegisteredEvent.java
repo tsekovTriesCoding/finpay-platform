@@ -16,13 +16,14 @@ public record UserRegisteredEvent(
         String oauthProvider,
         String oauthProviderId,
         String profileImageUrl,
+        String plan,
         LocalDateTime timestamp
 ) {
     public static UserRegisteredEvent create(UUID userId, String email, String firstName,
-                                              String lastName, String phoneNumber) {
+                                              String lastName, String phoneNumber, String plan) {
         return new UserRegisteredEvent(
                 userId, email, firstName, lastName, phoneNumber,
-                null, null, null, LocalDateTime.now()
+                null, null, null, plan, LocalDateTime.now()
         );
     }
 
@@ -31,7 +32,8 @@ public record UserRegisteredEvent(
                                                    String oauthProviderId, String profileImageUrl) {
         return new UserRegisteredEvent(
                 userId, email, firstName, lastName, null,
-                oauthProvider, oauthProviderId, profileImageUrl, LocalDateTime.now()
+                oauthProvider, oauthProviderId, profileImageUrl,
+                "STARTER", LocalDateTime.now()
         );
     }
 }

@@ -82,6 +82,11 @@ public class User implements Persistable<UUID> {
 
     private String postalCode;
 
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private AccountPlan plan = AccountPlan.STARTER;
+
     @Column(nullable = false)
     private boolean emailVerified;
 
@@ -108,5 +113,12 @@ public class User implements Persistable<UUID> {
 
     public enum AuthProvider {
         LOCAL, GOOGLE, GITHUB
+    }
+
+    /**
+     * Subscription plans that determine wallet limits, feature access, and transaction caps.
+     */
+    public enum AccountPlan {
+        STARTER, PRO, ENTERPRISE
     }
 }

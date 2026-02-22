@@ -11,6 +11,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  patchUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,7 +34,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null);
   }, []);
 
-  // Initialize auth state on mount
   useEffect(() => {
     const initAuth = async () => {
       const storedUser = localStorage.getItem('user');
@@ -88,7 +88,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const refreshUser = async () => {
     try {
-      // /me now returns the full profile from user-service (address, profileImageUrl, etc.)
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
       localStorage.setItem('user', JSON.stringify(currentUser));
@@ -96,6 +95,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       clearAuthData();
     }
   };
+
+  const patchUser = useCallback((updates: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   const value: AuthContextType = {
     user,
@@ -106,6 +114,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     logoutAll,
     refreshUser,
+    patchUser,
   };
 
   return (

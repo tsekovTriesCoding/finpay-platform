@@ -1,6 +1,7 @@
 package com.finpay.auth.kafka;
 
 import com.finpay.auth.config.KafkaConfig;
+import com.finpay.auth.event.PlanUpgradedEvent;
 import com.finpay.auth.event.UserRegisteredEvent;
 import com.finpay.outbox.service.OutboxService;
 import lombok.RequiredArgsConstructor;
@@ -36,5 +37,21 @@ public class AuthEventProducer {
         );
 
         log.debug("UserRegisteredEvent saved to outbox for user: {}", event.email());
+    }
+
+    public void publishPlanUpgraded(PlanUpgradedEvent event) {
+        log.info("Saving PlanUpgradedEvent to outbox for user: {} ({} → {})",
+                event.userId(), event.previousPlan(), event.newPlan());
+
+        outboxService.saveEvent(
+                "UserCredential",
+                event.userId().toString(),
+                "PLAN_UPGRADED",
+                KafkaConfig.AUTH_EVENTS_TOPIC,
+                event.userId().toString(),
+                event
+        );
+
+        log.debug("PlanUpgradedEvent saved to outbox for user: {}", event.userId());
     }
 }

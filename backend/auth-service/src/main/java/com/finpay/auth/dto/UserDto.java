@@ -24,6 +24,7 @@ public record UserDto(
         String postalCode,
         boolean emailVerified,
         boolean phoneVerified,
+        String plan,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime lastLoginAt
@@ -36,7 +37,7 @@ public record UserDto(
                 id, email, null, firstName, lastName, phoneNumber,
                 status, role, authProvider, providerId, profileImageUrl,
                 address, city, country, postalCode, emailVerified,
-                phoneVerified, createdAt, updatedAt, lastLoginAt
+                phoneVerified, plan, createdAt, updatedAt, lastLoginAt
         );
     }
 }

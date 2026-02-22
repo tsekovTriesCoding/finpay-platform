@@ -153,6 +153,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 null, null, null, null,
                 credential.isEmailVerified(),
                 false,
+                credential.getPlan() != null ? credential.getPlan().name() : "STARTER",
                 credential.getCreatedAt(),
                 credential.getUpdatedAt(),
                 credential.getLastLoginAt()

@@ -11,6 +11,7 @@ import {
   Bell,
   Megaphone,
   ServerCrash,
+  Sparkles,
   CheckCheck,
   Loader2,
   BellOff,
@@ -46,6 +47,8 @@ function getNotificationIcon(type: NotificationType) {
       return { Icon: Megaphone, color: 'text-purple-400', bg: 'bg-purple-500/20' };
     case 'SYSTEM':
       return { Icon: ServerCrash, color: 'text-dark-300', bg: 'bg-dark-600/50' };
+    case 'PLAN_UPGRADED':
+      return { Icon: Sparkles, color: 'text-amber-400', bg: 'bg-amber-500/20' };
     default:
       return { Icon: Bell, color: 'text-primary-400', bg: 'bg-primary-500/20' };
   }

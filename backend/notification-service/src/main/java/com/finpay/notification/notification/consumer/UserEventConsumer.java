@@ -62,6 +62,8 @@ public class UserEventConsumer {
             case "USER_EMAIL_VERIFIED" -> handleEmailVerified(UUID.fromString(userId), email, firstName);
             case "USER_STATUS_CHANGED" -> handleStatusChanged(UUID.fromString(userId), email, firstName);
             case "USER_UPDATED" -> handleUserUpdated(UUID.fromString(userId), firstName);
+            case "PLAN_UPGRADED" -> handlePlanUpgraded(
+                    UUID.fromString(userId), email, firstName, (String) event.get("plan"));
             default -> log.debug("Ignoring user event type: {}", eventType);
         }
 
@@ -156,9 +158,6 @@ public class UserEventConsumer {
     private void handleUserUpdated(UUID userId, String firstName) {
         log.info("Processing USER_UPDATED event for user: {}", userId);
 
-        // Send as EMAIL only (not IN_APP) - the user already sees inline form
-        // feedback for their own changes. This email serves as a security audit
-        // trail so they're alerted if someone else modifies their profile.
         String subject = "Profile Updated - FinPay";
         String content = String.format("""
             Hi %s,
@@ -178,6 +177,57 @@ public class UserEventConsumer {
                 subject,
                 content,
                 null
+        );
+    }
+
+    private void handlePlanUpgraded(UUID userId, String email, String firstName, String newPlan) {
+        log.info("Processing PLAN_UPGRADED event for user: {} to plan: {}", userId, newPlan);
+
+        String planLabel = newPlan != null ? switch (newPlan.toUpperCase()) {
+            case "PRO" -> "Pro";
+            case "ENTERPRISE" -> "Enterprise";
+            default -> newPlan;
+        } : "new";
+
+        // 1. In-app notification (pushed in real time via WebSocket)
+        String inAppSubject = "Plan Upgraded to " + planLabel + " \uD83C\uDF89";
+        String inAppContent = "Your account has been upgraded to the " + planLabel
+                + " plan. Enjoy your new limits and features!";
+
+        notificationService.createAndSendNotification(
+                userId,
+                Notification.NotificationType.PLAN_UPGRADED,
+                Notification.NotificationChannel.IN_APP,
+                inAppSubject,
+                inAppContent,
+                null
+        );
+
+        // 2. Confirmation email
+        String emailSubject = "Plan Upgraded to " + planLabel + " - FinPay";
+        String emailContent = String.format("""
+            Hi %s,
+            
+            Great news! Your FinPay account has been upgraded to the %s plan.
+            
+            Your new plan features are now active, including upgraded transaction
+            limits and additional capabilities.
+            
+            You can review your plan details in your account settings.
+            
+            If you did not make this change, please contact our support team immediately.
+            
+            Best regards,
+            The FinPay Team
+            """, firstName != null ? firstName : "there", planLabel);
+
+        notificationService.createAndSendNotification(
+                userId,
+                Notification.NotificationType.PLAN_UPGRADED,
+                Notification.NotificationChannel.EMAIL,
+                emailSubject,
+                emailContent,
+                email
         );
     }
 }

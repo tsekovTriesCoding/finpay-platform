@@ -30,7 +30,20 @@ public class WalletService {
 
     public WalletResponse getOrCreateWallet(UUID userId) {
         Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseGet(() -> createWalletForUser(userId));
+                .orElseGet(() -> createWalletForUser(userId, Wallet.AccountPlan.STARTER));
+        return walletMapper.toResponse(wallet);
+    }
+
+    /**
+     * Creates or retrieves a wallet with plan-specific configuration.
+     * Called when a user registers with a specific subscription plan.
+     */
+    public WalletResponse getOrCreateWalletWithPlan(UUID userId, String plan) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    Wallet.AccountPlan accountPlan = resolveAccountPlan(plan);
+                    return createWalletForUser(userId, accountPlan);
+                });
         return walletMapper.toResponse(wallet);
     }
 
@@ -183,16 +196,118 @@ public class WalletService {
         });
     }
 
-    private Wallet createWalletForUser(UUID userId) {
+    /**
+     * Upgrades a wallet's plan and applies the new plan's limits and features.
+     * Does NOT change the current balance — only limits and feature flags are updated.
+     */
+    public void upgradePlan(UUID userId, String newPlanName) {
+        Wallet wallet = walletRepository.findByUserId(userId).orElse(null);
+        if (wallet == null) {
+            log.warn("No wallet found for user {} during plan upgrade, skipping", userId);
+            return;
+        }
+
+        Wallet.AccountPlan newPlan = resolveAccountPlan(newPlanName);
+
+        if (wallet.getPlan() == newPlan) {
+            log.info("Wallet for user {} already on plan {}, skipping", userId, newPlan);
+            return;
+        }
+
+        Wallet.AccountPlan previousPlan = wallet.getPlan();
+        PlanConfiguration config = PlanConfiguration.forPlan(newPlan);
+
+        wallet.setPlan(newPlan);
+        wallet.setDailyTransactionLimit(config.dailyLimit());
+        wallet.setMonthlyTransactionLimit(config.monthlyLimit());
+        wallet.setMaxVirtualCards(config.maxVirtualCards());
+        wallet.setMultiCurrencyEnabled(config.multiCurrencyEnabled());
+        wallet.setApiAccessEnabled(config.apiAccessEnabled());
+
+        walletRepository.save(wallet);
+        log.info("Upgraded wallet for user {} from {} to {} - daily limit: {}, monthly limit: {}",
+                userId, previousPlan, newPlan, config.dailyLimit(), config.monthlyLimit());
+    }
+
+    private Wallet createWalletForUser(UUID userId, Wallet.AccountPlan plan) {
+        PlanConfiguration config = PlanConfiguration.forPlan(plan);
+        
         Wallet wallet = Wallet.builder()
-                .userId(userId).balance(DEFAULT_INITIAL_BALANCE)
-                .reservedBalance(BigDecimal.ZERO).currency(DEFAULT_CURRENCY)
-                .status(Wallet.WalletStatus.ACTIVE).build();
+                .userId(userId)
+                .balance(config.initialBalance())
+                .reservedBalance(BigDecimal.ZERO)
+                .currency(DEFAULT_CURRENCY)
+                .status(Wallet.WalletStatus.ACTIVE)
+                .plan(plan)
+                .dailyTransactionLimit(config.dailyLimit())
+                .monthlyTransactionLimit(config.monthlyLimit())
+                .maxVirtualCards(config.maxVirtualCards())
+                .multiCurrencyEnabled(config.multiCurrencyEnabled())
+                .apiAccessEnabled(config.apiAccessEnabled())
+                .build();
+        
         Wallet savedWallet = walletRepository.save(wallet);
+        log.info("Created {} wallet for user: {} with daily limit: {}, monthly limit: {}",
+                plan, userId, config.dailyLimit(), config.monthlyLimit());
+        
         recordTransaction(savedWallet, WalletTransaction.TransactionType.DEPOSIT,
-                DEFAULT_INITIAL_BALANCE, BigDecimal.ZERO, DEFAULT_INITIAL_BALANCE,
-                null, "Initial wallet balance");
+                config.initialBalance(), BigDecimal.ZERO, config.initialBalance(),
+                null, "Initial " + plan.name().toLowerCase() + " plan wallet balance");
         return savedWallet;
+    }
+
+    private Wallet.AccountPlan resolveAccountPlan(String plan) {
+        if (plan == null || plan.isBlank()) {
+            return Wallet.AccountPlan.STARTER;
+        }
+        try {
+            return Wallet.AccountPlan.valueOf(plan.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown plan '{}', defaulting to STARTER", plan);
+            return Wallet.AccountPlan.STARTER;
+        }
+    }
+
+    /**
+     * Plan-specific wallet configuration.
+     * Defines initial balance, transaction limits, and feature flags per plan tier.
+     */
+    private record PlanConfiguration(
+            BigDecimal initialBalance,
+            BigDecimal dailyLimit,
+            BigDecimal monthlyLimit,
+            int maxVirtualCards,
+            boolean multiCurrencyEnabled,
+            boolean apiAccessEnabled
+    ) {
+        static PlanConfiguration forPlan(Wallet.AccountPlan plan) {
+            return switch (plan) {
+                case STARTER -> new PlanConfiguration(
+                        new BigDecimal("1000.00"),      // $1,000 welcome balance
+                        new BigDecimal("500.00"),       // $500/day limit
+                        new BigDecimal("5000.00"),      // $5,000/month limit
+                        1,                               // 1 virtual card
+                        false,                           // No multi-currency
+                        false                            // No API access
+                );
+                case PRO -> new PlanConfiguration(
+                        new BigDecimal("10000.00"),     // $10,000 welcome balance
+                        new BigDecimal("10000.00"),     // $10,000/day limit
+                        new BigDecimal("100000.00"),    // $100,000/month limit
+                        10,                              // 10 virtual cards
+                        true,                            // Multi-currency enabled
+                        true                             // API access enabled
+                );
+                case ENTERPRISE -> new PlanConfiguration(
+                        new BigDecimal("50000.00"),     // $50,000 welcome balance
+                        new BigDecimal("1000000.00"),   // $1M/day limit
+                        new BigDecimal("10000000.00"),  // $10M/month limit
+                        Integer.MAX_VALUE,               // Unlimited virtual cards
+                        true,                            // Multi-currency enabled
+                        true                             // API access enabled
+                );
+            };
+        }
     }
 
     private void recordTransaction(Wallet wallet, WalletTransaction.TransactionType type,

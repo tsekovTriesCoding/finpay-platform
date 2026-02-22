@@ -31,6 +31,30 @@ public class Wallet {
     @Column(nullable = false, columnDefinition = "VARCHAR(20)") @Enumerated(EnumType.STRING)
     private WalletStatus status;
 
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)") @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private AccountPlan plan = AccountPlan.STARTER;
+
+    @Column(nullable = false, precision = 19, scale = 4)
+    @Builder.Default
+    private BigDecimal dailyTransactionLimit = new BigDecimal("500.00");
+
+    @Column(nullable = false, precision = 19, scale = 4)
+    @Builder.Default
+    private BigDecimal monthlyTransactionLimit = new BigDecimal("5000.00");
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer maxVirtualCards = 1;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean multiCurrencyEnabled = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean apiAccessEnabled = false;
+
     @Version
     private Long version;
 
@@ -41,6 +65,13 @@ public class Wallet {
     private LocalDateTime updatedAt;
 
     public enum WalletStatus { ACTIVE, FROZEN, CLOSED }
+
+    /**
+     * Subscription plans that determine wallet capabilities and limits.
+     */
+    public enum AccountPlan {
+        STARTER, PRO, ENTERPRISE
+    }
 
     public BigDecimal getAvailableBalance() {
         return balance.subtract(reservedBalance);
