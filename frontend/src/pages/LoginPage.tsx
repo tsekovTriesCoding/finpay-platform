@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useActionState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
@@ -11,35 +11,28 @@ export default function LoginPage() {
   const location = useLocation();
   const { login } = useAuth();
   
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      await login(formData);
-      navigate(from, { replace: true });
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        setError(axiosError.response?.data?.message || 'Invalid email or password');
-      } else {
-        setError('An error occurred. Please try again.');
+  const [error, submitAction, isPending] = useActionState<string | null, FormData>(
+    async (_prev, formData) => {
+      try {
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+        await login({ email, password });
+        navigate(from, { replace: true });
+        return null;
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'response' in err) {
+          const axiosError = err as { response?: { data?: { message?: string } } };
+          return axiosError.response?.data?.message || 'Invalid email or password';
+        }
+        return 'An error occurred. Please try again.';
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    null,
+  );
 
   const handleOAuthLogin = (provider: 'google' | 'github') => {
     const url = provider === 'google' 
@@ -129,7 +122,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form action={submitAction} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-dark-300 mb-2">
                 Email address
@@ -139,8 +132,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   id="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  name="email"
                   className="w-full pl-10 pr-4 py-3 bg-dark-800/50 border border-dark-700/50 rounded-lg text-white placeholder-dark-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                   placeholder="you@example.com"
                   required
@@ -157,8 +149,7 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  name="password"
                   className="w-full pl-10 pr-12 py-3 bg-dark-800/50 border border-dark-700/50 rounded-lg text-white placeholder-dark-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                   placeholder="••••••••"
                   required
@@ -191,10 +182,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isPending}
               className="btn-primary w-full"
             >
-              {isLoading ? (
+              {isPending ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
