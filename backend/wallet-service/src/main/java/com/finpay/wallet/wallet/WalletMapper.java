@@ -9,6 +9,10 @@ import org.mapstruct.Mapping;
 public interface WalletMapper {
 
     @Mapping(target = "availableBalance", expression = "java(wallet.getAvailableBalance())")
+    @Mapping(target = "dailySpent", source = "spendTracker.dailySpent")
+    @Mapping(target = "monthlySpent", source = "spendTracker.monthlySpent")
+    @Mapping(target = "remainingDailyLimit", expression = "java(wallet.getRemainingDailyLimit())")
+    @Mapping(target = "remainingMonthlyLimit", expression = "java(wallet.getRemainingMonthlyLimit())")
     WalletResponse toResponse(Wallet wallet);
 
     @Mapping(target = "eventId", expression = "java(java.util.UUID.randomUUID())")

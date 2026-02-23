@@ -43,6 +43,14 @@ public class Wallet {
     @Builder.Default
     private BigDecimal monthlyTransactionLimit = new BigDecimal("5000.00");
 
+    // Stracking (delegated to embeddable)
+
+    @Embedded
+    @Builder.Default
+    private SpendTracker spendTracker = new SpendTracker();
+
+    // Plan feature flags
+
     @Column(nullable = false)
     @Builder.Default
     private Integer maxVirtualCards = 1;
@@ -73,13 +81,28 @@ public class Wallet {
         STARTER, PRO, ENTERPRISE
     }
 
+    // Balance helpers
+
     public BigDecimal getAvailableBalance() {
         return balance.subtract(reservedBalance);
     }
 
+    // Spend-limit delegates
+
+    public BigDecimal getRemainingDailyLimit() {
+        return spendTracker.remainingDaily(dailyTransactionLimit);
+    }
+
+    public BigDecimal getRemainingMonthlyLimit() {
+        return spendTracker.remainingMonthly(monthlyTransactionLimit);
+    }
+
+    // Funds operations
+
     public boolean reserveFunds(BigDecimal amount) {
         if (getAvailableBalance().compareTo(amount) >= 0) {
             this.reservedBalance = this.reservedBalance.add(amount);
+            spendTracker.recordSpend(amount);
             return true;
         }
         return false;
@@ -90,6 +113,7 @@ public class Wallet {
         if (this.reservedBalance.compareTo(BigDecimal.ZERO) < 0) {
             this.reservedBalance = BigDecimal.ZERO;
         }
+        spendTracker.rollbackSpend(amount);
     }
 
     public void deductReservedFunds(BigDecimal amount) {

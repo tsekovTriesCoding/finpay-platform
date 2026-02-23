@@ -5,6 +5,7 @@ import {
   type Biller,
 } from '../../../api/billPaymentApi';
 import { CATEGORY_COLORS, getIcon, formatCurrency } from './constants';
+import SpendLimitGauge from '../SpendLimitGauge';
 
 interface PaymentFormProps {
   biller: Biller;
@@ -13,6 +14,10 @@ interface PaymentFormProps {
   amount: string;
   description: string;
   availableBalance: number | undefined;
+  remainingDailyLimit: number | undefined;
+  dailyTransactionLimit: number | undefined;
+  remainingMonthlyLimit: number | undefined;
+  monthlyTransactionLimit: number | undefined;
   error: string | null;
   onAccountNumberChange: (value: string) => void;
   onAccountHolderNameChange: (value: string) => void;
@@ -28,6 +33,10 @@ export default function PaymentForm({
   amount,
   description,
   availableBalance,
+  remainingDailyLimit,
+  dailyTransactionLimit,
+  remainingMonthlyLimit,
+  monthlyTransactionLimit,
   error,
   onAccountNumberChange,
   onAccountHolderNameChange,
@@ -39,7 +48,6 @@ export default function PaymentForm({
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-4">
-      {/* Selected biller badge */}
       <div className="flex items-center gap-3 p-3 bg-dark-800/50 rounded-xl border border-dark-700/50">
         <div
           className={`w-10 h-10 ${CATEGORY_COLORS[biller.category]} rounded-full flex items-center justify-center`}
@@ -54,7 +62,6 @@ export default function PaymentForm({
         </div>
       </div>
 
-      {/* Account number */}
       <div>
         <label className="block text-sm font-medium text-dark-300 mb-1.5">
           Account / Reference Number
@@ -69,7 +76,6 @@ export default function PaymentForm({
         />
       </div>
 
-      {/* Account holder name (optional) */}
       <div>
         <label className="block text-sm font-medium text-dark-300 mb-1.5">
           Account Holder Name <span className="text-dark-500">(optional)</span>
@@ -83,7 +89,6 @@ export default function PaymentForm({
         />
       </div>
 
-      {/* Amount */}
       <div>
         <label className="block text-sm font-medium text-dark-300 mb-1.5">
           Amount
@@ -107,9 +112,28 @@ export default function PaymentForm({
             Available: {formatCurrency(availableBalance)}
           </p>
         )}
+
+        {remainingDailyLimit != null && dailyTransactionLimit != null &&
+         remainingMonthlyLimit != null && monthlyTransactionLimit != null && (
+          <div className="mt-3 grid grid-cols-2 gap-3 p-3 bg-dark-800/50 rounded-lg border border-dark-700/50">
+            <SpendLimitGauge
+              label="Daily Left"
+              remaining={remainingDailyLimit}
+              limit={dailyTransactionLimit}
+              suffix="day"
+              formatCurrency={formatCurrency}
+            />
+            <SpendLimitGauge
+              label="Monthly Left"
+              remaining={remainingMonthlyLimit}
+              limit={monthlyTransactionLimit}
+              suffix="mo"
+              formatCurrency={formatCurrency}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Description */}
       <div>
         <label className="block text-sm font-medium text-dark-300 mb-1.5">
           Note <span className="text-dark-500">(optional)</span>

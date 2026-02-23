@@ -2,6 +2,7 @@ package com.finpay.wallet.shared.exception;
 
 import lombok.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -27,6 +28,14 @@ public class GlobalExceptionHandler {
         ErrorResponse error = ErrorResponse.builder().timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value()).error("Insufficient Funds").message(ex.getMessage()).build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(TransactionLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionLimitExceeded(TransactionLimitExceededException ex) {
+        ErrorResponse error = ErrorResponse.builder().timestamp(LocalDateTime.now())
+                .status(422)
+                .error("Transaction Limit Exceeded").message(ex.getMessage()).build();
+        return ResponseEntity.status(HttpStatusCode.valueOf(422)).body(error);
     }
 
     @ExceptionHandler(WalletException.class)

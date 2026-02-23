@@ -9,7 +9,10 @@ public record WalletResponse(
         UUID id, UUID userId, BigDecimal balance, BigDecimal reservedBalance,
         BigDecimal availableBalance, String currency, Wallet.WalletStatus status,
         Wallet.AccountPlan plan, BigDecimal dailyTransactionLimit,
-        BigDecimal monthlyTransactionLimit, Integer maxVirtualCards,
+        BigDecimal monthlyTransactionLimit,
+        BigDecimal dailySpent, BigDecimal monthlySpent,
+        BigDecimal remainingDailyLimit, BigDecimal remainingMonthlyLimit,
+        Integer maxVirtualCards,
         Boolean multiCurrencyEnabled, Boolean apiAccessEnabled,
         LocalDateTime createdAt, LocalDateTime updatedAt
 ) {}

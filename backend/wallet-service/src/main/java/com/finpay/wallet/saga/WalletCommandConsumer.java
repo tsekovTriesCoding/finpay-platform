@@ -6,6 +6,7 @@ import com.finpay.wallet.saga.event.WalletResponseEvent;
 import com.finpay.wallet.shared.config.KafkaConfig;
 import com.finpay.wallet.shared.exception.InsufficientFundsException;
 import com.finpay.wallet.shared.exception.ResourceNotFoundException;
+import com.finpay.wallet.shared.exception.TransactionLimitExceededException;
 import com.finpay.wallet.shared.exception.WalletException;
 import com.finpay.outbox.idempotency.IdempotentConsumerService;
 import com.finpay.wallet.wallet.WalletService;
@@ -92,6 +93,11 @@ public class WalletCommandConsumer {
             return WalletResponseEvent.failure(command.correlationId(), command.userId(),
                     WalletResponseEvent.ResponseType.OPERATION_FAILED, command.amount(),
                     command.currency(), "Insufficient funds: " + e.getMessage());
+        } catch (TransactionLimitExceededException e) {
+            log.warn("Transaction limit exceeded for command {}: {}", command.command(), e.getMessage());
+            return WalletResponseEvent.failure(command.correlationId(), command.userId(),
+                    WalletResponseEvent.ResponseType.OPERATION_FAILED, command.amount(),
+                    command.currency(), e.getMessage());
         } catch (ResourceNotFoundException e) {
             log.warn("Resource not found for command {}: {}", command.command(), e.getMessage());
             return WalletResponseEvent.failure(command.correlationId(), command.userId(),

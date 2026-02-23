@@ -11,6 +11,10 @@ export interface Wallet {
   plan: 'STARTER' | 'PRO' | 'ENTERPRISE';
   dailyTransactionLimit: number;
   monthlyTransactionLimit: number;
+  dailySpent: number;
+  monthlySpent: number;
+  remainingDailyLimit: number;
+  remainingMonthlyLimit: number;
   maxVirtualCards: number;
   multiCurrencyEnabled: boolean;
   apiAccessEnabled: boolean;
