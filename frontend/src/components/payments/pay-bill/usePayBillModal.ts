@@ -112,6 +112,18 @@ export default function usePayBillModal({
       setError(`Insufficient funds. Available: $${wallet.availableBalance.toFixed(2)}`);
       return false;
     }
+    if (wallet && num > wallet.remainingDailyLimit) {
+      setError(
+        `Daily limit exceeded. Remaining today: $${wallet.remainingDailyLimit.toFixed(2)} of $${wallet.dailyTransactionLimit.toFixed(2)}`
+      );
+      return false;
+    }
+    if (wallet && num > wallet.remainingMonthlyLimit) {
+      setError(
+        `Monthly limit exceeded. Remaining this month: $${wallet.remainingMonthlyLimit.toFixed(2)} of $${wallet.monthlyTransactionLimit.toFixed(2)}`
+      );
+      return false;
+    }
     return true;
   }, [selectedBiller, accountNumber, amount, wallet]);
 
@@ -210,6 +222,10 @@ export default function usePayBillModal({
     filteredBillers,
     headerTitle,
     availableBalance: wallet?.availableBalance,
+    remainingDailyLimit: wallet?.remainingDailyLimit,
+    dailyTransactionLimit: wallet?.dailyTransactionLimit,
+    remainingMonthlyLimit: wallet?.remainingMonthlyLimit,
+    monthlyTransactionLimit: wallet?.monthlyTransactionLimit,
 
     // Handlers
     handleCategorySelect,

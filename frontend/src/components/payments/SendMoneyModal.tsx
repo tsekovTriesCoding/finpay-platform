@@ -10,6 +10,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 
+import SpendLimitGauge from './SpendLimitGauge';
+
 import UserSearch from './UserSearch';
 import { UserSearchResult, MoneyTransfer } from '../../api';
 import { useWallet, useSendMoney } from '../../hooks';
@@ -83,6 +85,20 @@ export default function SendMoneyModal({
 
     if (wallet && amountNum > wallet.availableBalance) {
       setError(`Insufficient funds. Available: $${wallet.availableBalance.toFixed(2)}`);
+      return false;
+    }
+
+    if (wallet && amountNum > wallet.remainingDailyLimit) {
+      setError(
+        `Daily limit exceeded. Remaining today: $${wallet.remainingDailyLimit.toFixed(2)} of $${wallet.dailyTransactionLimit.toFixed(2)}`
+      );
+      return false;
+    }
+
+    if (wallet && amountNum > wallet.remainingMonthlyLimit) {
+      setError(
+        `Monthly limit exceeded. Remaining this month: $${wallet.remainingMonthlyLimit.toFixed(2)} of $${wallet.monthlyTransactionLimit.toFixed(2)}`
+      );
       return false;
     }
 
@@ -177,13 +193,13 @@ export default function SendMoneyModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
           >
             <div 
-              className="bg-dark-900 rounded-2xl shadow-xl border border-dark-800/50 w-full max-w-md overflow-hidden"
+              className="bg-dark-900 rounded-2xl shadow-xl border border-dark-800/50 w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-4 flex items-center justify-between">
+              <div className="bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-4 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                     <ArrowUpRight className="w-5 h-5 text-white" />
@@ -200,16 +216,36 @@ export default function SendMoneyModal({
                 )}
               </div>
 
-              <div className="p-6">
+              <div className="p-6 overflow-y-auto flex-1">
                 {step === 'form' && (
                   <div className="mb-6 p-4 bg-dark-800/50 border border-dark-700/50 rounded-xl">
                     <p className="text-sm text-dark-400 mb-1">Available Balance</p>
                     {isLoadingWallet ? (
                       <Loader2 className="w-5 h-5 text-dark-400 animate-spin" />
                     ) : wallet ? (
-                      <p className="text-2xl font-bold text-white">
-                        {formatCurrency(wallet.availableBalance)}
-                      </p>
+                      <>
+                        <p className="text-2xl font-bold text-white mb-3">
+                          {formatCurrency(wallet.availableBalance)}
+                        </p>
+
+                        {/* Daily / Monthly remaining budget */}
+                        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-dark-700/50">
+                          <SpendLimitGauge
+                            label="Daily Left"
+                            remaining={wallet.remainingDailyLimit}
+                            limit={wallet.dailyTransactionLimit}
+                            suffix="day"
+                            formatCurrency={formatCurrency}
+                          />
+                          <SpendLimitGauge
+                            label="Monthly Left"
+                            remaining={wallet.remainingMonthlyLimit}
+                            limit={wallet.monthlyTransactionLimit}
+                            suffix="mo"
+                            formatCurrency={formatCurrency}
+                          />
+                        </div>
+                      </>
                     ) : (
                       <p className="text-dark-500">Unable to load balance</p>
                     )}

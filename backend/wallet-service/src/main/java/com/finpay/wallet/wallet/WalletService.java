@@ -2,6 +2,8 @@ package com.finpay.wallet.wallet;
 
 import com.finpay.wallet.shared.exception.InsufficientFundsException;
 import com.finpay.wallet.shared.exception.ResourceNotFoundException;
+import com.finpay.wallet.shared.exception.TransactionLimitExceededException;
+import com.finpay.wallet.shared.exception.TransactionLimitExceededException.LimitType;
 import com.finpay.wallet.shared.exception.WalletException;
 import com.finpay.wallet.transaction.WalletTransaction;
 import com.finpay.wallet.transaction.WalletTransactionService;
@@ -25,7 +27,6 @@ public class WalletService {
     private final WalletTransactionService transactionService;
     private final WalletMapper walletMapper;
 
-    private static final BigDecimal DEFAULT_INITIAL_BALANCE = new BigDecimal("10000.00");
     private static final String DEFAULT_CURRENCY = "USD";
 
     public WalletResponse getOrCreateWallet(UUID userId) {
@@ -62,14 +63,43 @@ public class WalletService {
     public WalletOperationResponse reserveFunds(UUID userId, BigDecimal amount, String referenceId) {
         Wallet wallet = getWalletForUpdate(userId);
         BigDecimal balanceBefore = wallet.getBalance();
+
         if (wallet.getStatus() != Wallet.WalletStatus.ACTIVE)
             throw new WalletException("Wallet is not active");
         if (wallet.getAvailableBalance().compareTo(amount) < 0)
             throw new InsufficientFundsException("Insufficient funds. Available: " +
                     wallet.getAvailableBalance() + ", Required: " + amount);
+
+        // Enforce daily / monthly transaction limits
+        SpendTracker tracker = wallet.getSpendTracker();
+        tracker.resetIfNeeded();
+
+        BigDecimal remainingDaily = tracker.remainingDaily(wallet.getDailyTransactionLimit());
+        if (remainingDaily.compareTo(amount) < 0) {
+            throw new TransactionLimitExceededException(
+                    LimitType.DAILY,
+                    wallet.getDailyTransactionLimit(),
+                    tracker.getDailySpent(),
+                    amount);
+        }
+
+        BigDecimal remainingMonthly = tracker.remainingMonthly(wallet.getMonthlyTransactionLimit());
+        if (remainingMonthly.compareTo(amount) < 0) {
+            throw new TransactionLimitExceededException(
+                    LimitType.MONTHLY,
+                    wallet.getMonthlyTransactionLimit(),
+                    tracker.getMonthlySpent(),
+                    amount);
+        }
+
+        // Reserve (also increments spend counters)
         boolean reserved = wallet.reserveFunds(amount);
         if (reserved) {
             walletRepository.save(wallet);
+            log.info("Reserved {} for user {} – daily {}/{}, monthly {}/{}",
+                    amount, userId,
+                    tracker.getDailySpent(), wallet.getDailyTransactionLimit(),
+                    tracker.getMonthlySpent(), wallet.getMonthlyTransactionLimit());
             recordTransaction(wallet, WalletTransaction.TransactionType.RESERVE,
                     amount, balanceBefore, wallet.getBalance(), referenceId, "Funds reserved for transfer");
             return WalletOperationResponse.success(wallet.getId(), userId, "RESERVE",

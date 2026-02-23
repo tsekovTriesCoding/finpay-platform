@@ -38,6 +38,10 @@ export default function PayBillModal({
     filteredBillers,
     headerTitle,
     availableBalance,
+    remainingDailyLimit,
+    dailyTransactionLimit,
+    remainingMonthlyLimit,
+    monthlyTransactionLimit,
     handleCategorySelect,
     handleBillerSelect,
     handleAmountChange,
@@ -128,6 +132,10 @@ export default function PayBillModal({
                     amount={amount}
                     description={description}
                     availableBalance={availableBalance}
+                    remainingDailyLimit={remainingDailyLimit}
+                    dailyTransactionLimit={dailyTransactionLimit}
+                    remainingMonthlyLimit={remainingMonthlyLimit}
+                    monthlyTransactionLimit={monthlyTransactionLimit}
                     error={error}
                     onAccountNumberChange={handleAccountNumberChange}
                     onAccountHolderNameChange={setAccountHolderName}
