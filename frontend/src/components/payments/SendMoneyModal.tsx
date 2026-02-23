@@ -14,6 +14,7 @@ import SpendLimitGauge from './SpendLimitGauge';
 
 import UserSearch from './UserSearch';
 import { UserSearchResult, MoneyTransfer } from '../../api';
+import { getApiErrorMessage } from '../../api/axios';
 import { useWallet, useSendMoney } from '../../hooks';
 
 interface SendMoneyModalProps {
@@ -146,9 +147,7 @@ export default function SendMoneyModal({
         },
         onError: (err) => {
           console.error('Transfer error:', err);
-          const apiError = (err as { response?: { data?: { message?: string } } })?.response?.data
-            ?.message;
-          setError(apiError || err.message || 'Transfer failed. Please try again.');
+          setError(getApiErrorMessage(err, 'Transfer failed. Please try again.'));
           setStep('error');
         },
       },

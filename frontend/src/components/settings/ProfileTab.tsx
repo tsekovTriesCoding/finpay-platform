@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import type { User } from '../../api/authApi';
 import type { UpdateProfileRequest } from '../../api/userApi';
 import { userService } from '../../api/userApi';
+import { getApiErrorMessage } from '../../api/axios';
 import ProfileImageUpload from './ProfileImageUpload';
 
 interface ProfileTabProps {
@@ -66,9 +67,7 @@ export default function ProfileTab({ user, onProfileUpdated }: ProfileTabProps) 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to update profile';
-      setError(message);
+      setError(getApiErrorMessage(err, 'Failed to update profile'));
     } finally {
       setIsSaving(false);
     }

@@ -13,6 +13,7 @@ import {
 
 import UserSearch from './UserSearch';
 import { UserSearchResult, MoneyRequest } from '../../api';
+import { getApiErrorMessage } from '../../api/axios';
 import { useCreateMoneyRequest } from '../../hooks';
 
 interface RequestMoneyModalProps {
@@ -109,9 +110,7 @@ export default function RequestMoneyModal({
         },
         onError: (err) => {
           console.error('Request money error:', err);
-          const apiError = (err as { response?: { data?: { message?: string } } })?.response
-            ?.data?.message;
-          setError(apiError || err.message || 'Failed to create request. Please try again.');
+          setError(getApiErrorMessage(err, 'Failed to create request. Please try again.'));
           setStep('error');
         },
       },

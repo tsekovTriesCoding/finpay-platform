@@ -20,6 +20,7 @@ import type {
   NotificationPreferencesRequest,
 } from '../../api/notificationApi';
 import { notificationService } from '../../api/notificationApi';
+import { getApiErrorMessage } from '../../api/axios';
 
 interface NotificationPreferencesTabProps {
   userId: string;
@@ -96,8 +97,8 @@ export default function NotificationPreferencesTab({ userId }: NotificationPrefe
         };
         setPrefs(mapped);
         setOriginalPrefs(mapped);
-      } catch {
-        setError('Failed to load notification preferences');
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, 'Failed to load notification preferences'));
       } finally {
         setIsLoading(false);
       }
@@ -134,8 +135,8 @@ export default function NotificationPreferencesTab({ userId }: NotificationPrefe
       setHasChanges(false);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
-    } catch {
-      setError('Failed to save notification preferences. Please try again.');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to save notification preferences. Please try again.'));
     } finally {
       setIsSaving(false);
     }

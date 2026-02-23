@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 import { authService } from '../api';
+import { getApiErrorMessage } from '../api/axios';
 
 export default function OAuth2CallbackPage() {
   const navigate = useNavigate();
@@ -33,9 +34,9 @@ export default function OAuth2CallbackPage() {
         setTimeout(() => {
           navigate('/dashboard', { replace: true });
         }, 1500);
-      } catch {
+      } catch (err: unknown) {
         setStatus('error');
-        setErrorMessage('Failed to complete authentication');
+        setErrorMessage(getApiErrorMessage(err, 'Failed to complete authentication'));
       }
     };
 

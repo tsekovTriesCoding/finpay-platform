@@ -5,6 +5,7 @@ import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
 
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../api';
+import { getApiErrorMessage } from '../api/axios';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -24,11 +25,7 @@ export default function LoginPage() {
         navigate(from, { replace: true });
         return null;
       } catch (err: unknown) {
-        if (err && typeof err === 'object' && 'response' in err) {
-          const axiosError = err as { response?: { data?: { message?: string } } };
-          return axiosError.response?.data?.message || 'Invalid email or password';
-        }
-        return 'An error occurred. Please try again.';
+        return getApiErrorMessage(err, 'Invalid email or password');
       }
     },
     null,

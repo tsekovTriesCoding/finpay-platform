@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { authService, type AccountPlan } from '../../api';
+import { getApiErrorMessage } from '../../api/axios';
 import { VALID_PLANS, type RegisterFormState } from './constants';
 
 /**
@@ -65,13 +66,7 @@ export function useRegisterForm() {
         navigate('/dashboard', { replace: true });
         return { error: null };
       } catch (err: unknown) {
-        if (err && typeof err === 'object' && 'response' in err) {
-          const axiosError = err as { response?: { data?: { message?: string } } };
-          return {
-            error: axiosError.response?.data?.message || 'Registration failed. Please try again.',
-          };
-        }
-        return { error: 'An error occurred. Please try again.' };
+        return { error: getApiErrorMessage(err, 'Registration failed. Please try again.') };
       }
     },
     { error: null },

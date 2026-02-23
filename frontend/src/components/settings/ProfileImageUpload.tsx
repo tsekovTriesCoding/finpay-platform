@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 
 import type { User } from '../../api/authApi';
 import { userService } from '../../api/userApi';
+import { getApiErrorMessage } from '../../api/axios';
 
 interface ProfileImageUploadProps {
   user: User;
@@ -37,8 +38,8 @@ export default function ProfileImageUpload({ user, onImageUpdated }: ProfileImag
       try {
         const result = await userService.uploadProfileImage(user.id, file);
         onImageUpdated(result.profileImageUrl);
-      } catch {
-        setError('Failed to upload image. Please try again.');
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, 'Failed to upload image. Please try again.'));
       } finally {
         setIsUploading(false);
         if (fileInputRef.current) {
@@ -56,8 +57,8 @@ export default function ProfileImageUpload({ user, onImageUpdated }: ProfileImag
     try {
       await userService.deleteProfileImage(user.id);
       onImageUpdated(null);
-    } catch {
-      setError('Failed to remove image. Please try again.');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Failed to remove image. Please try again.'));
     } finally {
       setIsDeleting(false);
     }
