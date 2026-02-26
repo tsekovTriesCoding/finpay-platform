@@ -13,20 +13,6 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "authProvider", ignore = true)
-    @Mapping(target = "providerId", ignore = true)
-    @Mapping(target = "status", constant = "PENDING_VERIFICATION")
-    @Mapping(target = "role", constant = "USER")
-    @Mapping(target = "plan", ignore = true)
-    @Mapping(target = "emailVerified", constant = "false")
-    @Mapping(target = "phoneVerified", constant = "false")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "lastLoginAt", ignore = true)
-    User toEntity(UserRequest request);
-
     UserResponse toResponse(User user);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

@@ -33,27 +33,6 @@ public class UserService {
     private final UserEventProducer userEventProducer;
     private final UserMapper userMapper;
 
-    public UserResponse createUser(UserRequest request) {
-        log.info("Creating new user with email: {}", request.email());
-
-        if (userRepository.existsByEmail(request.email())) {
-            throw new UserAlreadyExistsException("User with email " + request.email() + " already exists");
-        }
-
-        if (request.phoneNumber() != null && userRepository.existsByPhoneNumber(request.phoneNumber())) {
-            throw new UserAlreadyExistsException("User with phone number " + request.phoneNumber() + " already exists");
-        }
-
-        User user = userMapper.toEntity(request);
-        User savedUser = userRepository.save(user);
-        log.info("User created successfully with ID: {}", savedUser.getId());
-
-        // Publish user created event
-        publishUserEvent(savedUser, UserEvent.EventType.USER_CREATED);
-
-        return userMapper.toResponse(savedUser);
-    }
-
     @Transactional(readOnly = true)
     public UserResponse getUserById(UUID id) {
         log.debug("Fetching user with ID: {}", id);
