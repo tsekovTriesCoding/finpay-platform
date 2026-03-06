@@ -10,6 +10,7 @@ import com.finpay.user.exception.ResourceNotFoundException;
 import com.finpay.user.exception.UserAlreadyExistsException;
 import com.finpay.user.mapper.UserMapper;
 import com.finpay.user.repository.UserRepository;
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -74,6 +75,7 @@ public class UserService {
                 .map(UserSearchResponse::fromEntity);
     }
 
+    @Observed(name = "user.update", contextualName = "update-user")
     public UserResponse updateUser(UUID id, UserRequest request) {
         log.info("Updating user with ID: {}", id);
 
@@ -98,6 +100,7 @@ public class UserService {
         return userMapper.toResponse(updatedUser);
     }
 
+    @Observed(name = "user.delete", contextualName = "delete-user")
     public void deleteUser(UUID id) {
         log.info("Deleting user with ID: {}", id);
 
@@ -182,6 +185,7 @@ public class UserService {
     /**
      * Create user from auth-service (with pre-hashed password and auth provider info).
      */
+    @Observed(name = "user.create-from-auth", contextualName = "create-user-from-auth")
     public User createUserFromAuth(CreateUserRequest request) {
         log.info("Internal: Creating user with email: {}", request.email());
 

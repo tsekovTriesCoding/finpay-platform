@@ -110,6 +110,36 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
+        <!-- Distributed Tracing: Spring Boot OTel Tracing auto-configuration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-micrometer-tracing-opentelemetry</artifactId>
+        </dependency>
+
+        <!-- Distributed Tracing: Micrometer Tracing + OpenTelemetry Bridge -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+
+        <!-- Distributed Tracing: Spring Boot Zipkin auto-configuration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-zipkin</artifactId>
+        </dependency>
+
+        <!-- Distributed Tracing: Zipkin/Tempo Exporter -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-zipkin</artifactId>
+        </dependency>
+
+        <!-- Metrics: Prometheus Registry -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
         <!-- Spring Retry (required for @RetryableTopic non-blocking retries) -->
         <dependency>
             <groupId>org.springframework.retry</groupId>

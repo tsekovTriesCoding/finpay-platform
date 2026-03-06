@@ -6,6 +6,7 @@ import com.finpay.payment.billpayment.event.BillPaymentEvent;
 import com.finpay.payment.shared.exception.PaymentException;
 import com.finpay.payment.shared.exception.ResourceNotFoundException;
 import com.finpay.payment.shared.kafka.WalletCommandProducer;
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -46,6 +47,7 @@ public class BillPaymentService {
 
     // Initiate
 
+    @Observed(name = "bill-payment.initiate", contextualName = "initiate-bill-payment")
     public BillPaymentResponse initiateBillPayment(BillPaymentRequest request) {
         log.info("Initiating bill payment for user: {} biller: {} amount: {}",
                 request.userId(), request.billerCode(), request.amount());

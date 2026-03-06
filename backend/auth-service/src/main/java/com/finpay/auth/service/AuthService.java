@@ -14,6 +14,7 @@ import com.finpay.auth.kafka.AuthEventProducer;
 import com.finpay.auth.repository.RefreshTokenRepository;
 import com.finpay.auth.repository.UserCredentialRepository;
 import com.finpay.auth.security.JwtService;
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -41,6 +42,7 @@ public class AuthService {
     private final AuthEventProducer authEventProducer;
     private final UserServiceClient userServiceClient;
 
+    @Observed(name = "auth.register", contextualName = "register-user")
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering new user with email: {}", request.email());
 
@@ -84,6 +86,7 @@ public class AuthService {
         return createAuthResponse(savedCredential);
     }
 
+    @Observed(name = "auth.login", contextualName = "login-user")
     public AuthResponse login(LoginRequest request) {
         log.info("Authenticating user with email: {}", request.email());
 
@@ -118,6 +121,7 @@ public class AuthService {
         return createAuthResponse(credential);
     }
 
+    @Observed(name = "auth.refresh-token", contextualName = "refresh-token")
     public AuthResponse refreshToken(RefreshTokenRequest request) {
         log.debug("Refreshing token");
 
@@ -147,6 +151,7 @@ public class AuthService {
         return createAuthResponse(credential);
     }
 
+    @Observed(name = "auth.logout", contextualName = "logout-user")
     public void logout(String refreshTokenValue) {
         log.debug("Logging out user");
 
@@ -255,6 +260,7 @@ public class AuthService {
      * Validates the upgrade path (can only go up: STARTER → PRO → ENTERPRISE).
      * Publishes a PLAN_UPGRADED event for downstream services.
      */
+    @Observed(name = "auth.upgrade-plan", contextualName = "upgrade-plan")
     public UpgradePlanResponse upgradePlan(UUID userId, UpgradePlanRequest request) {
         UserCredential credential = credentialRepository.findById(userId)
                 .orElseThrow(() -> new InvalidTokenException("User not found"));

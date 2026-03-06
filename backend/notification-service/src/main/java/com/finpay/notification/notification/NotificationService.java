@@ -5,6 +5,7 @@ import com.finpay.notification.notification.delivery.WebSocketNotificationServic
 import com.finpay.notification.notification.dto.NotificationRequest;
 import com.finpay.notification.notification.dto.NotificationResponse;
 import com.finpay.notification.shared.exception.ResourceNotFoundException;
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ public class NotificationService {
     private final NotificationMapper notificationMapper;
     private final WebSocketNotificationService webSocketNotificationService;
 
+    @Observed(name = "notification.create", contextualName = "create-notification")
     public NotificationResponse createNotification(NotificationRequest request) {
         log.info("Creating notification for user: {} type: {}", request.userId(), request.type());
 
@@ -37,6 +39,7 @@ public class NotificationService {
         return notificationMapper.toResponse(saved);
     }
 
+    @Observed(name = "notification.create-and-send", contextualName = "create-and-send-notification")
     public void createAndSendNotification(UUID userId, Notification.NotificationType type,
                                           Notification.NotificationChannel channel,
                                           String subject, String content, String recipient) {
@@ -59,6 +62,7 @@ public class NotificationService {
         sendNotification(saved);
     }
 
+    @Observed(name = "notification.send", contextualName = "send-notification")
     public void sendNotification(Notification notification) {
         log.info("Sending notification: {} via {}", notification.getId(), notification.getChannel());
 

@@ -6,6 +6,7 @@ import com.finpay.payment.transfer.event.TransferSagaEvent;
 import com.finpay.payment.shared.exception.ResourceNotFoundException;
 import com.finpay.payment.shared.exception.TransferException;
 import com.finpay.payment.shared.kafka.WalletCommandProducer;
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -53,6 +54,7 @@ public class MoneyTransferService {
      * Wallet validation happens asynchronously - if wallet doesn't exist or has
      * insufficient funds, the saga will fail and compensation will be triggered.
      */
+    @Observed(name = "transfer.initiate", contextualName = "initiate-money-transfer")
     public MoneyTransferResponse initiateTransfer(UUID senderUserId, MoneyTransferRequest request) {
         log.info("Initiating transfer from {} to {} for amount {} {}",
                 senderUserId, request.recipientUserId(), request.amount(), request.currency());
@@ -227,6 +229,7 @@ public class MoneyTransferService {
     /**
      * SAGA Step 1 completed - funds reserved → send DEDUCT command.
      */
+    @Observed(name = "transfer.saga.funds-reserved", contextualName = "handle-funds-reserved")
     public void handleFundsReserved(UUID transferId, UUID walletId) {
         log.info("SAGA Step 1 completed: Funds reserved for transfer {}", transferId);
         MoneyTransfer transfer = getTransferEntity(transferId);
@@ -248,6 +251,7 @@ public class MoneyTransferService {
     /**
      * SAGA Step 2 completed - funds deducted → send CREDIT command.
      */
+    @Observed(name = "transfer.saga.funds-deducted", contextualName = "handle-funds-deducted")
     public void handleFundsDeducted(UUID transferId) {
         log.info("SAGA Step 2 completed: Funds deducted for transfer {}", transferId);
         MoneyTransfer transfer = getTransferEntity(transferId);
@@ -268,6 +272,7 @@ public class MoneyTransferService {
      *
      * @return result containing linked-request info for cross-feature coordination
      */
+    @Observed(name = "transfer.saga.funds-credited", contextualName = "handle-funds-credited")
     public TransferSagaStepResult handleFundsCredited(UUID transferId, UUID walletId) {
         log.info("SAGA Step 3 completed: Funds credited for transfer {}", transferId);
         MoneyTransfer transfer = getTransferEntity(transferId);
@@ -308,6 +313,7 @@ public class MoneyTransferService {
      *
      * @return result containing linked-request info for cross-feature coordination
      */
+    @Observed(name = "transfer.saga.failure", contextualName = "handle-saga-failure")
     public TransferSagaStepResult handleSagaFailure(UUID transferId, String failureReason) {
         log.error("Wallet operation failed for transfer {}: {}", transferId, failureReason);
         MoneyTransfer transfer = getTransferEntity(transferId);
