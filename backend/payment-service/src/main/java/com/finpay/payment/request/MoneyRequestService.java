@@ -7,6 +7,7 @@ import com.finpay.payment.shared.exception.ResourceNotFoundException;
 import com.finpay.payment.shared.exception.TransferException;
 import com.finpay.payment.transfer.MoneyTransfer;
 import com.finpay.payment.transfer.MoneyTransferService;
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -46,6 +47,7 @@ public class MoneyRequestService {
     /**
      * Create a money request from the authenticated user (requester) to a payer.
      */
+    @Observed(name = "money-request.create", contextualName = "create-money-request")
     public MoneyRequestResponse createRequest(UUID requesterUserId, MoneyRequestCreateDto dto) {
         log.info("Creating money request: requester={} payer={} amount={} {}",
                 requesterUserId, dto.payerUserId(), dto.amount(), dto.currency());
@@ -100,6 +102,7 @@ public class MoneyRequestService {
      * Payer approves the money request, triggering the transfer SAGA.
      * Delegates transfer creation and SAGA initiation to {@link MoneyTransferService}.
      */
+    @Observed(name = "money-request.approve", contextualName = "approve-money-request")
     public MoneyRequestResponse approveRequest(UUID payerUserId, UUID requestId) {
         MoneyRequest request = findAndValidateForAction(requestId, payerUserId, true);
 
@@ -145,6 +148,7 @@ public class MoneyRequestService {
     /**
      * Payer declines the money request.
      */
+    @Observed(name = "money-request.decline", contextualName = "decline-money-request")
     public MoneyRequestResponse declineRequest(UUID payerUserId, UUID requestId) {
         MoneyRequest request = findAndValidateForAction(requestId, payerUserId, true);
 

@@ -9,6 +9,7 @@ import com.finpay.wallet.transaction.WalletTransaction;
 import com.finpay.wallet.transaction.WalletTransactionService;
 import com.finpay.wallet.wallet.dto.WalletOperationResponse;
 import com.finpay.wallet.wallet.dto.WalletResponse;
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -60,6 +61,7 @@ public class WalletService {
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for user: " + userId));
     }
 
+    @Observed(name = "wallet.reserve-funds", contextualName = "reserve-funds")
     public WalletOperationResponse reserveFunds(UUID userId, BigDecimal amount, String referenceId) {
         Wallet wallet = getWalletForUpdate(userId);
         BigDecimal balanceBefore = wallet.getBalance();
@@ -119,6 +121,7 @@ public class WalletService {
                 amount, wallet.getBalance(), wallet.getAvailableBalance());
     }
 
+    @Observed(name = "wallet.deduct-funds", contextualName = "deduct-funds")
     public WalletOperationResponse deductFunds(UUID userId, BigDecimal amount, String referenceId) {
         Wallet wallet = getWalletForUpdate(userId);
         BigDecimal balanceBefore = wallet.getBalance();
@@ -132,6 +135,7 @@ public class WalletService {
                 amount, wallet.getBalance(), wallet.getAvailableBalance());
     }
 
+    @Observed(name = "wallet.credit-funds", contextualName = "credit-funds")
     public WalletOperationResponse creditFunds(UUID userId, BigDecimal amount, String referenceId) {
         Wallet wallet = getWalletForUpdate(userId);
         BigDecimal balanceBefore = wallet.getBalance();
@@ -170,6 +174,7 @@ public class WalletService {
                 amount, wallet.getBalance(), wallet.getAvailableBalance());
     }
 
+    @Observed(name = "wallet.deposit", contextualName = "deposit-funds")
     public WalletOperationResponse deposit(UUID userId, BigDecimal amount, String referenceId, String description) {
         Wallet wallet = getWalletForUpdate(userId);
         BigDecimal balanceBefore = wallet.getBalance();
@@ -184,6 +189,7 @@ public class WalletService {
                 amount, wallet.getBalance(), wallet.getAvailableBalance());
     }
 
+    @Observed(name = "wallet.withdraw", contextualName = "withdraw-funds")
     public WalletOperationResponse withdraw(UUID userId, BigDecimal amount, String referenceId, String description) {
         Wallet wallet = getWalletForUpdate(userId);
         BigDecimal balanceBefore = wallet.getBalance();

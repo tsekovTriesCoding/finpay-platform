@@ -5,6 +5,7 @@ import com.finpay.payment.payment.dto.PaymentResponse;
 import com.finpay.payment.payment.event.PaymentEvent;
 import com.finpay.payment.shared.exception.PaymentException;
 import com.finpay.payment.shared.exception.ResourceNotFoundException;
+import io.micrometer.observation.annotation.Observed;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
@@ -42,6 +43,7 @@ public class PaymentService {
     private static final BigDecimal PROCESSING_FEE_RATE = new BigDecimal("0.015"); // 1.5%
     private static final BigDecimal MIN_PROCESSING_FEE = new BigDecimal("0.50");
 
+    @Observed(name = "payment.initiate", contextualName = "initiate-payment")
     public PaymentResponse initiatePayment(PaymentRequest request) {
         log.info("Initiating payment for user: {} amount: {} {}", 
                 request.userId(), request.amount(), request.currency());
@@ -93,6 +95,7 @@ public class PaymentService {
         });
     }
 
+    @Observed(name = "payment.process", contextualName = "process-payment")
     public PaymentResponse processPayment(UUID paymentId) {
         log.info("Processing payment with ID: {}", paymentId);
 
@@ -174,6 +177,7 @@ public class PaymentService {
                 .map(paymentMapper::toResponse);
     }
 
+    @Observed(name = "payment.cancel", contextualName = "cancel-payment")
     public PaymentResponse cancelPayment(UUID paymentId) {
         log.info("Cancelling payment with ID: {}", paymentId);
 
@@ -192,6 +196,7 @@ public class PaymentService {
         return paymentMapper.toResponse(cancelledPayment);
     }
 
+    @Observed(name = "payment.refund", contextualName = "refund-payment")
     public PaymentResponse refundPayment(UUID paymentId) {
         log.info("Refunding payment with ID: {}", paymentId);
 

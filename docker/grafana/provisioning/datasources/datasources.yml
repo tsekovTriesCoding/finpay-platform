@@ -1,0 +1,21 @@
+# Grafana Datasource Provisioning
+# Auto-configures Prometheus and Zipkin as data sources
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: '10s'
+      httpMethod: POST
+
+  - name: Zipkin
+    type: zipkin
+    access: proxy
+    url: http://zipkin:9411
+    editable: true
