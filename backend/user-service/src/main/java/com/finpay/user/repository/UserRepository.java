@@ -39,4 +39,31 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> searchUsers(@Param("searchTerm") String searchTerm, 
                            @Param("excludeUserId") UUID excludeUserId, 
                            Pageable pageable);
+
+    // Admin query methods
+
+    /** Paginated role query for admin user listing */
+    Page<User> findByRole(User.UserRole role, Pageable pageable);
+
+    /** Paginated status query for admin user listing */
+    Page<User> findByStatus(User.UserStatus status, Pageable pageable);
+
+    /** Paginated role + status combo filter */
+    Page<User> findByRoleAndStatus(User.UserRole role, User.UserStatus status, Pageable pageable);
+
+    /**
+     * Admin search: find users by name or email (no exclusion, all statuses).
+     */
+    @Query("SELECT u FROM User u WHERE " +
+           "LOWER(u.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+           "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+           "LOWER(u.email) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+           "LOWER(CONCAT(u.firstName, ' ', u.lastName)) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
+    Page<User> adminSearchUsers(@Param("searchTerm") String searchTerm, Pageable pageable);
+
+    /** Count users by status */
+    long countByStatus(User.UserStatus status);
+
+    /** Count users by role */
+    long countByRole(User.UserRole role);
 }

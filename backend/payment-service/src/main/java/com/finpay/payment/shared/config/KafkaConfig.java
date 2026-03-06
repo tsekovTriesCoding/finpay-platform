@@ -31,7 +31,7 @@ public class KafkaConfig {
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
 
-    // ==================== Producer Configuration ====================
+    // Producer Configuration
 
     @Bean
     public ProducerFactory<String, String> producerFactory() {
@@ -47,7 +47,7 @@ public class KafkaConfig {
         return new KafkaTemplate<>(producerFactory());
     }
 
-    // ==================== Consumer Configuration ====================
+    // Consumer Configuration
 
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
@@ -68,7 +68,7 @@ public class KafkaConfig {
         return factory;
     }
 
-    // ==================== Topic Configuration ====================
+    // Topic Configuration
 
     @Bean
     public NewTopic paymentEventsTopic() {

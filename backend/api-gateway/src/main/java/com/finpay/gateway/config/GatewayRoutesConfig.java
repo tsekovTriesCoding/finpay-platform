@@ -76,4 +76,31 @@ public class GatewayRoutesConfig {
                 .filter(lb("notification-service"))
                 .build();
     }
+
+    // Admin Routes
+    // These routes are additionally protected by AdminAuthFilter (ADMIN role check)
+
+    @Bean
+    public RouterFunction<ServerResponse> adminUserRoute() {
+        return route("admin-users")
+                .route(path("/api/v1/admin/users/**"), HandlerFunctions.http())
+                .filter(lb("user-service"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> adminTransactionRoute() {
+        return route("admin-transactions")
+                .route(path("/api/v1/admin/transactions/**"), HandlerFunctions.http())
+                .filter(lb("payment-service"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> adminWalletRoute() {
+        return route("admin-wallets")
+                .route(path("/api/v1/admin/wallets/**"), HandlerFunctions.http())
+                .filter(lb("wallet-service"))
+                .build();
+    }
 }

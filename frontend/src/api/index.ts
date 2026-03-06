@@ -42,3 +42,18 @@ export type {
   TransactionType,
   TransactionDetail,
 } from './transactionDetailApi';
+export { adminService } from './adminApi';
+export type {
+  AdminUser,
+  AdminTransaction,
+  AdminWallet,
+  AuditLogEntry,
+  AdminDashboardMetrics,
+  TransactionMetrics,
+  WalletMetrics,
+  PageResponse,
+  UserFilterParams,
+  TransactionFilterParams,
+  WalletFilterParams,
+  AuditLogFilterParams,
+} from './adminApi';

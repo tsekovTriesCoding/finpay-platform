@@ -160,7 +160,7 @@ export const handlers = [
     HttpResponse.json(createMockTransfer()),
   ),
 
-  // ── Bill Payments ─────────────────────────────────────────────────────
+  // Bill Payments
   http.post(`${BASE_URL}/api/v1/payments/bills`, () =>
     HttpResponse.json(createMockBillPayment({ status: 'PROCESSING' })),
   ),

@@ -58,7 +58,7 @@ test.describe('Responsive Layout', () => {
     await expect(body).toBeVisible();
 
     // Hero text should still be visible
-    await expect(page.locator('text=The Future of')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /The Future of Payments is Here/ })).toBeVisible();
   });
 
   test('desktop viewport shows full navigation', async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe('Responsive Layout', () => {
     await page.goto('/');
 
     await expect(page.locator('text=Sign In')).toBeVisible();
-    await expect(page.locator('text=Get Started')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Get Started', exact: true })).toBeVisible();
   });
 });
 

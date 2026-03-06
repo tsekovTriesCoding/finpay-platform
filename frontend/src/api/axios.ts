@@ -19,8 +19,14 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Don't intercept auth endpoints - let their errors propagate to the caller
+    const url: string = originalRequest?.url ?? '';
+    const isAuthEndpoint = url.includes('/auth/login')
+      || url.includes('/auth/register')
+      || url.includes('/auth/refresh');
+
     // If the error is 401 and we haven't tried to refresh yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
       try {

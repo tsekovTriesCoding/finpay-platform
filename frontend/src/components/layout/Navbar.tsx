@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Zap, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Zap, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Navbar = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -106,12 +106,22 @@ const Navbar = () => {
 
           <div className="hidden lg:flex items-center gap-4">
             {!isLoading && isAuthenticated ? (
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/dashboard" className="btn-primary flex items-center gap-2">
-                  <LayoutDashboard className="w-4 h-4" />
-                  Dashboard
-                </Link>
-              </motion.div>
+              <div className="flex items-center gap-3">
+                {user?.role === 'ADMIN' && (
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Link to="/admin" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition-colors text-sm font-medium">
+                      <ShieldCheck className="w-4 h-4" />
+                      Admin
+                    </Link>
+                  </motion.div>
+                )}
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/dashboard" className="btn-primary flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </Link>
+                </motion.div>
+              </div>
             ) : (
               <>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -209,14 +219,26 @@ const Navbar = () => {
                 animate="open"
               >
                 {!isLoading && isAuthenticated ? (
-                  <Link
-                    to="/dashboard"
-                    className="btn-primary w-full flex items-center justify-center gap-2"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <LayoutDashboard className="w-4 h-4" />
-                    Dashboard
-                  </Link>
+                  <>
+                    {user?.role === 'ADMIN' && (
+                      <Link
+                        to="/admin"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition-colors font-medium"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        Admin Panel
+                      </Link>
+                    )}
+                    <Link
+                      to="/dashboard"
+                      className="btn-primary w-full flex items-center justify-center gap-2"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <Link

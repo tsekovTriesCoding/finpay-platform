@@ -198,15 +198,15 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("should throw exception when account is disabled")
-        void shouldThrowWhenAccountDisabled() {
+        @DisplayName("should throw exception when account is suspended")
+        void shouldThrowWhenAccountSuspended() {
             savedCredential.setEnabled(false);
             when(credentialRepository.findByEmail("john@example.com")).thenReturn(Optional.of(savedCredential));
             when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
 
             assertThatThrownBy(() -> authService.login(loginRequest))
                     .isInstanceOf(BadCredentialsException.class)
-                    .hasMessage("Account is disabled");
+                    .hasMessage("Account is suspended");
         }
 
         @Test
@@ -242,6 +242,34 @@ class AuthServiceTest {
     @Nested
     @DisplayName("Refresh Token")
     class RefreshTokenTests {
+
+        @Test
+        @DisplayName("should reject refresh when account is suspended")
+        void shouldRejectRefreshWhenSuspended() {
+            savedCredential.setEnabled(false);
+
+            RefreshToken validToken = RefreshToken.builder()
+                    .id(UUID.randomUUID())
+                    .token("suspended-user-token")
+                    .userId(savedCredential.getId())
+                    .userEmail("john@example.com")
+                    .expiryDate(LocalDateTime.now().plusDays(7))
+                    .revoked(false)
+                    .build();
+
+            when(refreshTokenRepository.findByToken("suspended-user-token")).thenReturn(Optional.of(validToken));
+            when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
+            when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(validToken);
+
+            RefreshTokenRequest request = new RefreshTokenRequest("suspended-user-token");
+            assertThatThrownBy(() -> authService.refreshToken(request))
+                    .isInstanceOf(BadCredentialsException.class)
+                    .hasMessage("Account is suspended");
+
+            // Should revoke the token used in the attempt
+            assertThat(validToken.isRevoked()).isTrue();
+            verify(refreshTokenRepository).save(validToken);
+        }
 
         @Test
         @DisplayName("should refresh token successfully")
@@ -393,6 +421,86 @@ class AuthServiceTest {
             assertThatThrownBy(() -> authService.upgradePlan(savedCredential.getId(), request))
                     .isInstanceOf(PlanAlreadyActiveException.class)
                     .hasMessageContaining("already on the STARTER plan");
+        }
+    }
+
+    @Nested
+    @DisplayName("Get Current User")
+    class GetCurrentUserTests {
+
+        @Test
+        @DisplayName("should reject suspended user")
+        void shouldRejectSuspendedUser() {
+            savedCredential.setEnabled(false);
+
+            when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(savedCredential.getId());
+            when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
+
+            assertThatThrownBy(() -> authService.getCurrentUser("valid-token"))
+                    .isInstanceOf(BadCredentialsException.class)
+                    .hasMessage("Account is suspended");
+
+            verify(userServiceClient, never()).getUserProfile(any());
+        }
+
+        @Test
+        @DisplayName("should return user profile for active user")
+        void shouldReturnProfileForActiveUser() {
+            when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(savedCredential.getId());
+            when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
+
+            UserDto fullProfile = new UserDto(
+                    savedCredential.getId(), "john@example.com", null,
+                    "John", "Doe", "+1234567890", "ACTIVE", "USER",
+                    null, null, null, null, null, null, null,
+                    true, false, "STARTER", null, null, null
+            );
+            when(userServiceClient.getUserProfile(savedCredential.getId())).thenReturn(fullProfile);
+
+            UserDto result = authService.getCurrentUser("valid-token");
+
+            assertThat(result).isNotNull();
+            assertThat(result.email()).isEqualTo("john@example.com");
+        }
+
+        @Test
+        @DisplayName("should fall back to local credential when user-service is unavailable")
+        void shouldFallBackToLocalCredential() {
+            when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(savedCredential.getId());
+            when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
+            when(userServiceClient.getUserProfile(savedCredential.getId())).thenReturn(null);
+
+            UserDto result = authService.getCurrentUser("valid-token");
+
+            assertThat(result).isNotNull();
+            assertThat(result.email()).isEqualTo("john@example.com");
+            assertThat(result.role()).isEqualTo("USER");
+        }
+
+        @Test
+        @DisplayName("should throw for invalid token")
+        void shouldThrowForInvalidToken() {
+            when(jwtService.isTokenValid("bad-token")).thenReturn(false);
+
+            assertThatThrownBy(() -> authService.getCurrentUser("bad-token"))
+                    .isInstanceOf(InvalidTokenException.class)
+                    .hasMessage("Invalid or expired token");
+        }
+
+        @Test
+        @DisplayName("should throw when user not found")
+        void shouldThrowWhenUserNotFound() {
+            UUID missingId = UUID.randomUUID();
+            when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(missingId);
+            when(credentialRepository.findById(missingId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> authService.getCurrentUser("valid-token"))
+                    .isInstanceOf(InvalidTokenException.class)
+                    .hasMessage("User not found");
         }
     }
 }

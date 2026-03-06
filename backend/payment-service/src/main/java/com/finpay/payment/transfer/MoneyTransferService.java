@@ -165,7 +165,7 @@ public class MoneyTransferService {
         return transferRepository.findById(id);
     }
 
-    // ======================== Request-triggered transfers ========================
+    // Request-triggered transfers
 
     /**
      * Create a transfer record for an approved money request.
@@ -221,7 +221,7 @@ public class MoneyTransferService {
         return transfer;
     }
 
-    // ======================== SAGA step handlers ========================
+    // SAGA step handlers
     // Called by WalletResponseConsumer to advance or compensate the transfer SAGA.
 
     /**
@@ -323,7 +323,7 @@ public class MoneyTransferService {
         return TransferSagaStepResult.of(transfer);
     }
 
-    // ======================== Compensation handlers ========================
+    // Compensation handlers
 
     /** Compensation: funds released after failed saga. */
     public void handleFundsReleased(UUID transferId) {

@@ -8,6 +8,7 @@ public record UserEvent(
         String email,
         String firstName,
         String lastName,
+        String status,
         String plan,
         EventType eventType,
         LocalDateTime timestamp

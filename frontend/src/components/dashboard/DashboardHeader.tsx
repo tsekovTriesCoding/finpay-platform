@@ -1,4 +1,4 @@
-import { Settings, LogOut, Zap, Sparkles, Building2 } from 'lucide-react';
+import { Settings, LogOut, Zap, Sparkles, Building2, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import type { User } from '../../api/authApi';
@@ -40,6 +40,16 @@ export default function DashboardHeader({ user, onLogout }: DashboardHeaderProps
 
           <div className="flex items-center gap-4">
             <NotificationBell userId={user.id} />
+            {user.role === 'ADMIN' && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition-colors text-sm font-medium"
+                title="Admin Panel"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </button>
+            )}
             <button
               onClick={() => navigate('/settings')}
               className="p-2 text-dark-400 hover:text-white transition-colors"

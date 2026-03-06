@@ -31,6 +31,7 @@ public interface UserMapper {
     void updateEntityFromRequest(UserRequest request, @MappingTarget User user);
 
     @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "status", expression = "java(user.getStatus() != null ? user.getStatus().name() : \"ACTIVE\")")
     @Mapping(target = "plan", expression = "java(user.getPlan() != null ? user.getPlan().name() : \"STARTER\")")
     @Mapping(target = "timestamp", expression = "java(java.time.LocalDateTime.now())")
     UserEvent toEvent(User user, UserEvent.EventType eventType);

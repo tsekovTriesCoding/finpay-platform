@@ -3,6 +3,8 @@ package com.finpay.payment.billpayment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -23,4 +25,11 @@ public interface BillPaymentRepository extends JpaRepository<BillPayment, UUID> 
     List<BillPayment> findByUserIdAndStatus(UUID userId, BillPayment.BillPaymentStatus status);
 
     Page<BillPayment> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+
+    // Admin query methods
+
+    @Query("SELECT b FROM BillPayment b WHERE b.status = :status")
+    Page<BillPayment> findByStatusPaged(@Param("status") BillPayment.BillPaymentStatus status, Pageable pageable);
+
+    long countByStatus(BillPayment.BillPaymentStatus status);
 }

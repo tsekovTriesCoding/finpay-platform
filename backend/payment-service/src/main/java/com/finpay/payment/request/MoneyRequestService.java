@@ -269,7 +269,7 @@ public class MoneyRequestService {
                 .orElseThrow(() -> new ResourceNotFoundException("Money request not found: " + requestId));
     }
 
-    // ======================== SAGA callbacks (called by WalletResponseConsumer) ========================
+    // SAGA callbacks (called by WalletResponseConsumer)
 
     /**
      * Fail a money request whose linked transfer SAGA failed.

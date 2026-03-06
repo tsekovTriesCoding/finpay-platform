@@ -40,4 +40,11 @@ public interface MoneyRequestRepository extends JpaRepository<MoneyRequest, UUID
     /** Find requests needing compensation. */
     @Query("SELECT r FROM MoneyRequest r WHERE r.sagaStatus = :sagaStatus AND r.compensationRequired = true AND r.compensationCompleted = false")
     List<MoneyRequest> findPendingCompensations(@Param("sagaStatus") MoneyRequest.SagaStatus sagaStatus);
+
+    // Admin query methods
+
+    @Query("SELECT r FROM MoneyRequest r WHERE r.status = :status")
+    Page<MoneyRequest> findByStatusPaged(@Param("status") MoneyRequest.RequestStatus status, Pageable pageable);
+
+    long countByStatus(MoneyRequest.RequestStatus status);
 }
