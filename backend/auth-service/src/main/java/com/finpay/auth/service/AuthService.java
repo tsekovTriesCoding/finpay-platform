@@ -99,9 +99,10 @@ public class AuthService {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        // Check user status
+        // Check user status (kept in sync via Kafka USER_STATUS_CHANGED events
+        // from user-service - see UserEventConsumer)
         if (!credential.isEnabled()) {
-            throw new BadCredentialsException("Account is disabled");
+            throw new BadCredentialsException("Account is suspended");
         }
 
         if (credential.isAccountLocked()) {
@@ -130,6 +131,14 @@ public class AuthService {
         // Get credential
         UserCredential credential = credentialRepository.findById(refreshToken.getUserId())
                 .orElseThrow(() -> new InvalidTokenException("User not found"));
+
+        // Reject disabled accounts (suspended/inactive) -> belt-and-suspenders
+        // alongside token revocation done by UserEventConsumer
+        if (!credential.isEnabled()) {
+            refreshToken.setRevoked(true);
+            refreshTokenRepository.save(refreshToken);
+            throw new BadCredentialsException("Account is suspended");
+        }
 
         // Revoke old refresh token
         refreshToken.setRevoked(true);
@@ -161,6 +170,11 @@ public class AuthService {
         UUID userId = jwtService.extractUserIdAsUUID(token);
         UserCredential credential = credentialRepository.findById(userId)
                 .orElseThrow(() -> new InvalidTokenException("User not found"));
+
+        // Reject suspended/disabled users so the frontend logs them out
+        if (!credential.isEnabled()) {
+            throw new BadCredentialsException("Account is suspended");
+        }
         
         // Try to fetch the full profile from user-service (has address, fresh profileImageUrl, etc.)
         UserDto fullProfile = userServiceClient.getUserProfile(userId);
@@ -174,7 +188,22 @@ public class AuthService {
     }
 
     private AuthResponse createAuthResponse(UserCredential credential) {
-        UserDto userDto = toUserDto(credential);
+        // Try to fetch the full profile from user-service (has the real role, address, etc.)
+        UserDto userDto = null;
+        try {
+            userDto = userServiceClient.getUserProfile(credential.getId());
+        } catch (Exception e) {
+            log.debug("Could not fetch user profile from user-service: {}", e.getMessage());
+        }
+        // Fall back to local credential data (role defaults to USER)
+        if (userDto == null) {
+            userDto = toUserDto(credential);
+        }
+
+        // Block suspended users from obtaining new tokens (covers token refresh path too)
+        if ("SUSPENDED".equalsIgnoreCase(userDto.status())) {
+            throw new BadCredentialsException("Account is suspended");
+        }
         
         String accessToken = jwtService.generateAccessToken(userDto);
         String refreshTokenValue = jwtService.generateRefreshToken(userDto);

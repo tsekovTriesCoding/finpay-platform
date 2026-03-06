@@ -14,6 +14,28 @@ GRANT ALL PRIVILEGES ON finpay_auth.* TO 'finpay'@'%';
 
 FLUSH PRIVILEGES;
 
+-- Audit log table for admin actions (fintech compliance: PCI-DSS, SOX)
+USE finpay_users;
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BINARY(16) NOT NULL PRIMARY KEY,
+    actor_id BINARY(16) NOT NULL,
+    actor_email VARCHAR(255) NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    target_type VARCHAR(30) NOT NULL,
+    target_id VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    previous_state TEXT,
+    new_state TEXT,
+    ip_address VARCHAR(45),
+    service_source VARCHAR(50) NOT NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    INDEX idx_audit_actor (actor_id),
+    INDEX idx_audit_target (target_type, target_id),
+    INDEX idx_audit_action (action),
+    INDEX idx_audit_created (created_at),
+    INDEX idx_audit_actor_action (actor_id, action)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Transactional Outbox tables (one per database)
 -- JPA ddl-auto:update will auto-create these, but we define
 -- them here for docker-compose cold-start and documentation.

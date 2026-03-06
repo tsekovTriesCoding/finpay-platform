@@ -5,6 +5,11 @@ dist/
 coverage/
 .nyc_output/
 
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+
 npm-debug.log*
 
 !.vscode/extensions.json

@@ -11,8 +11,8 @@ test.describe('Registration Flow', () => {
   });
 
   test('shows step indicator with Plan and Account steps', async ({ page }) => {
-    await expect(page.locator('text=Plan')).toBeVisible();
-    await expect(page.locator('text=Account')).toBeVisible();
+    await expect(page.getByText('Choose Plan')).toBeVisible();
+    await expect(page.getByText('Create Account')).toBeVisible();
   });
 
   test('starts on plan selection step', async ({ page }) => {
@@ -47,7 +47,7 @@ test.describe('Registration Flow', () => {
     // Should now see account details form
     await expect(page.locator('label:has-text("First name")')).toBeVisible();
     await expect(page.locator('label:has-text("Email address")')).toBeVisible();
-    await expect(page.locator('label:has-text("Password")')).toBeVisible();
+    await expect(page.locator('label[for="password"]')).toBeVisible();
   });
 
   test('shows plan badge on step 2', async ({ page }) => {

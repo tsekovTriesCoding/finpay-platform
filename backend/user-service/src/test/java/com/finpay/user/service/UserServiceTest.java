@@ -171,8 +171,8 @@ class UserServiceTest {
             when(userRepository.save(any(User.class))).thenReturn(testUser);
             when(userMapper.toResponse(testUser)).thenReturn(userResponse);
             when(userMapper.toEvent(any(User.class), any(UserEvent.EventType.class)))
-                    .thenReturn(new UserEvent(userId, "john@example.com", "John", "Doe", "STARTER",
-                            UserEvent.EventType.USER_UPDATED, LocalDateTime.now()));
+                    .thenReturn(new UserEvent(userId, "john@example.com", "John", "Doe", "ACTIVE",
+                            "STARTER", UserEvent.EventType.USER_UPDATED, LocalDateTime.now()));
 
             UserResponse response = userService.updateUser(userId, userRequest);
 
@@ -199,8 +199,8 @@ class UserServiceTest {
         void shouldDeleteUserSuccessfully() {
             when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
             when(userMapper.toEvent(any(User.class), any(UserEvent.EventType.class)))
-                    .thenReturn(new UserEvent(userId, "john@example.com", "John", "Doe", "STARTER",
-                            UserEvent.EventType.USER_DELETED, LocalDateTime.now()));
+                    .thenReturn(new UserEvent(userId, "john@example.com", "John", "Doe", "ACTIVE",
+                            "STARTER", UserEvent.EventType.USER_DELETED, LocalDateTime.now()));
 
             userService.deleteUser(userId);
 
@@ -229,8 +229,8 @@ class UserServiceTest {
             when(userRepository.save(any(User.class))).thenReturn(testUser);
             when(userMapper.toResponse(testUser)).thenReturn(userResponse);
             when(userMapper.toEvent(any(User.class), any(UserEvent.EventType.class)))
-                    .thenReturn(new UserEvent(userId, "john@example.com", "John", "Doe", "STARTER",
-                            UserEvent.EventType.USER_STATUS_CHANGED, LocalDateTime.now()));
+                    .thenReturn(new UserEvent(userId, "john@example.com", "John", "Doe", "ACTIVE",
+                            "STARTER", UserEvent.EventType.USER_STATUS_CHANGED, LocalDateTime.now()));
 
             UserResponse response = userService.updateUserStatus(userId, User.UserStatus.SUSPENDED);
 
@@ -250,8 +250,8 @@ class UserServiceTest {
             when(userRepository.save(any(User.class))).thenReturn(testUser);
             when(userMapper.toResponse(testUser)).thenReturn(userResponse);
             when(userMapper.toEvent(any(User.class), any(UserEvent.EventType.class)))
-                    .thenReturn(new UserEvent(userId, "john@example.com", "John", "Doe", "STARTER",
-                            UserEvent.EventType.USER_EMAIL_VERIFIED, LocalDateTime.now()));
+                    .thenReturn(new UserEvent(userId, "john@example.com", "John", "Doe", "ACTIVE",
+                            "STARTER", UserEvent.EventType.USER_EMAIL_VERIFIED, LocalDateTime.now()));
 
             userService.verifyEmail(userId);
 

@@ -4,9 +4,7 @@ test.describe('Home Page', () => {
   test('displays the hero section', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.locator('text=The Future of')).toBeVisible();
-    await expect(page.locator('text=Payments')).toBeVisible();
-    await expect(page.locator('text=is Here')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /The Future of Payments is Here/ })).toBeVisible();
   });
 
   test('displays the navigation bar', async ({ page }) => {
@@ -14,7 +12,7 @@ test.describe('Home Page', () => {
 
     await expect(page.locator('text=FinPay').first()).toBeVisible();
     await expect(page.locator('text=Sign In')).toBeVisible();
-    await expect(page.locator('text=Get Started')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Get Started', exact: true })).toBeVisible();
   });
 
   test('navigates to login page', async ({ page }) => {

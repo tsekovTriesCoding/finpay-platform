@@ -39,7 +39,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Import(OutboxKafkaMessageConfig.class)
 public class OutboxAutoConfiguration {
 
-    // ─── Outbox (producer side) ─────────────────────────────────────────
+    // Outbox (producer side)
 
     @Bean
     @ConditionalOnMissingBean(OutboxService.class)
@@ -57,7 +57,7 @@ public class OutboxAutoConfiguration {
         return new OutboxPublisher(outboxEventRepository, kafkaTemplate, properties);
     }
 
-    // ─── Idempotency (consumer side) ────────────────────────────────────
+    // Idempotency (consumer side)
 
     @Bean
     @ConditionalOnMissingBean(IdempotentConsumerService.class)

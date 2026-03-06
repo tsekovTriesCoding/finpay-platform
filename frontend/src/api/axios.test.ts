@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { getApiErrorMessage } from './axios';
+import api, { getApiErrorMessage, API_GATEWAY_URL } from './axios';
 
 describe('getApiErrorMessage', () => {
   it('extracts message from Axios error response', () => {
@@ -42,5 +42,32 @@ describe('getApiErrorMessage', () => {
     };
 
     expect(getApiErrorMessage(error)).toBe('Something went wrong. Please try again.');
+  });
+
+  it('prefers response.data.message over Error.message', () => {
+    const error = Object.assign(new Error('generic'), {
+      response: { data: { message: 'Account is suspended' } },
+    });
+
+    expect(getApiErrorMessage(error)).toBe('Account is suspended');
+  });
+});
+
+describe('axios interceptor', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
+
+  it('should have withCredentials enabled', () => {
+    expect(api.defaults.withCredentials).toBe(true);
+  });
+
+  it('should set Content-Type to application/json', () => {
+    expect(api.defaults.headers['Content-Type']).toBe('application/json');
+  });
+
+  it('should use API_GATEWAY_URL as baseURL', () => {
+    expect(api.defaults.baseURL).toBe(API_GATEWAY_URL);
   });
 });

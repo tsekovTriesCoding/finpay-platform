@@ -1,5 +1,7 @@
 package com.finpay.wallet.wallet;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -23,4 +25,10 @@ public interface WalletRepository extends JpaRepository<Wallet, UUID> {
     Optional<Wallet> findByIdForUpdate(@Param("id") UUID id);
 
     boolean existsByUserId(UUID userId);
+
+    // Admin query methods
+
+    Page<Wallet> findByStatus(Wallet.WalletStatus status, Pageable pageable);
+
+    long countByStatus(Wallet.WalletStatus status);
 }

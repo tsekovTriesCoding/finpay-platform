@@ -28,4 +28,11 @@ public interface MoneyTransferRepository extends JpaRepository<MoneyTransfer, UU
 
     @Query("SELECT t FROM MoneyTransfer t WHERE t.sagaStatus = :sagaStatus AND t.compensationRequired = true AND t.compensationCompleted = false")
     List<MoneyTransfer> findPendingCompensations(@Param("sagaStatus") MoneyTransfer.SagaStatus sagaStatus);
+
+    // Admin query methods
+
+    @Query("SELECT t FROM MoneyTransfer t WHERE t.status = :status")
+    Page<MoneyTransfer> findByStatusPaged(@Param("status") MoneyTransfer.TransferStatus status, Pageable pageable);
+
+    long countByStatus(MoneyTransfer.TransferStatus status);
 }

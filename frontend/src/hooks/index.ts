@@ -25,3 +25,20 @@ export {
 } from './useNotifications';
 export { useWebSocket } from './useWebSocket';
 export { transactionDetailKeys, useTransactionDetail } from './useTransactionDetail';
+export {
+  adminKeys,
+  useAdminUsers,
+  useAdminUsersByRole,
+  useAdminDashboardMetrics,
+  useChangeUserRole,
+  useSuspendUser,
+  useUnsuspendUser,
+  useForcePasswordReset,
+  useAdminTransactions,
+  useAdminTransactionMetrics,
+  useAdminWallets,
+  useAdminWalletMetrics,
+  useFreezeWallet,
+  useUnfreezeWallet,
+  useAdminAuditLogs,
+} from './useAdmin';

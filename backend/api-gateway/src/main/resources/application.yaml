@@ -50,3 +50,7 @@ logging:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.cloud.gateway.server.mvc: DEBUG
     com.finpay.gateway: DEBUG
+
+# JWT secret for admin route authorization (must match auth-service)
+jwt:
+  secret: ${JWT_SECRET}

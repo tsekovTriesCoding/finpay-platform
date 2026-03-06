@@ -147,7 +147,7 @@ public class UserService {
         userEventProducer.sendUserEvent(event);
     }
 
-    // ==================== Internal API Methods ====================
+    // Internal API Methods
     // Used by auth-service for authentication operations
 
     /**
