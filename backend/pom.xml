@@ -36,6 +36,7 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <spring-dotenv.version>5.1.0</spring-dotenv.version>
         <testcontainers.version>2.0.0</testcontainers.version>
+        <springdoc.version>2.8.6</springdoc.version>
     </properties>
 
     <dependencyManagement>
@@ -70,6 +71,13 @@
                 <groupId>com.finpay</groupId>
                 <artifactId>finpay-outbox-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <!-- SpringDoc OpenAPI -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -138,6 +146,12 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- SpringDoc OpenAPI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
 
         <!-- Spring Retry (required for @RetryableTopic non-blocking retries) -->

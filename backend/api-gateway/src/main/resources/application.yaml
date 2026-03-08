@@ -73,3 +73,19 @@ logging:
 # JWT secret for admin route authorization (must match auth-service)
 jwt:
   secret: ${JWT_SECRET}
+
+# SpringDoc OpenAPI — aggregate all service specs in gateway Swagger UI
+springdoc:
+  swagger-ui:
+    urls:
+      - name: Auth Service
+        url: /api-docs/auth-service
+      - name: User Service
+        url: /api-docs/user-service
+      - name: Payment Service
+        url: /api-docs/payment-service
+      - name: Wallet Service
+        url: /api-docs/wallet-service
+      - name: Notification Service
+        url: /api-docs/notification-service
+    urls-primary-name: Auth Service
