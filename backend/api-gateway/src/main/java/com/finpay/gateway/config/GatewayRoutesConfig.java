@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 
+import static org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions.setPath;
 import static org.springframework.cloud.gateway.server.mvc.filter.LoadBalancerFilterFunctions.lb;
 import static org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions.route;
 import static org.springframework.cloud.gateway.server.mvc.predicate.GatewayRequestPredicates.path;
@@ -101,6 +102,53 @@ public class GatewayRoutesConfig {
         return route("admin-wallets")
                 .route(path("/api/v1/admin/wallets/**"), HandlerFunctions.http())
                 .filter(lb("wallet-service"))
+                .build();
+    }
+
+    // OpenAPI docs routes - proxy each service's /v3/api-docs for gateway aggregation
+
+    @Bean
+    public RouterFunction<ServerResponse> authServiceApiDocs() {
+        return route("auth-service-api-docs")
+                .route(path("/api-docs/auth-service"), HandlerFunctions.http())
+                .before(setPath("/v3/api-docs"))
+                .filter(lb("auth-service"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> userServiceApiDocs() {
+        return route("user-service-api-docs")
+                .route(path("/api-docs/user-service"), HandlerFunctions.http())
+                .before(setPath("/v3/api-docs"))
+                .filter(lb("user-service"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> paymentServiceApiDocs() {
+        return route("payment-service-api-docs")
+                .route(path("/api-docs/payment-service"), HandlerFunctions.http())
+                .before(setPath("/v3/api-docs"))
+                .filter(lb("payment-service"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> walletServiceApiDocs() {
+        return route("wallet-service-api-docs")
+                .route(path("/api-docs/wallet-service"), HandlerFunctions.http())
+                .before(setPath("/v3/api-docs"))
+                .filter(lb("wallet-service"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> notificationServiceApiDocs() {
+        return route("notification-service-api-docs")
+                .route(path("/api-docs/notification-service"), HandlerFunctions.http())
+                .before(setPath("/v3/api-docs"))
+                .filter(lb("notification-service"))
                 .build();
     }
 }
