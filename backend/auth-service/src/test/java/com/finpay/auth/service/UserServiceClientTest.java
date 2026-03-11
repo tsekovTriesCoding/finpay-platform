@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClientException;
 
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.when;
         "spring.cloud.circuitbreaker.resilience4j.disable-time-limiter=true"
 })
 @Import(TestcontainersConfig.class)
+@ActiveProfiles("test")
 @DisplayName("UserServiceClient Resilience Tests")
 class UserServiceClientTest {
 
