@@ -127,9 +127,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: backend/${{ matrix.service }}
-          file: backend/Dockerfile
-          build-args: |
-            SERVICE_NAME=${{ matrix.service }}
+          file: backend/${{ matrix.service }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -5,7 +5,6 @@ import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 
 import { server } from '../test/msw-server';
-import { createMockNotification } from '../test/factories';
 import { useNotifications, useUnreadCount } from './useNotifications';
 
 const BASE_URL = 'http://localhost:8080';

@@ -1,11 +1,6 @@
-# Shared layered Dockerfile for FinPay Spring Boot services
-# Kept as a fallback — prefer per-service Dockerfiles instead.
-# See: backend/<service>/Dockerfile
-
 FROM eclipse-temurin:25-jre-alpine AS builder
-ARG SERVICE_NAME
 WORKDIR /builder
-COPY target/${SERVICE_NAME}-0.0.1-SNAPSHOT.jar app.jar
+COPY target/wallet-service-0.0.1-SNAPSHOT.jar app.jar
 RUN java -Djarmode=layertools -jar app.jar extract --destination extracted
 
 FROM eclipse-temurin:25-jre-alpine
@@ -17,5 +12,5 @@ COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
 COPY --from=builder /builder/extracted/application/ ./
 RUN chown -R finpay:finpay /app
 USER finpay
-EXPOSE 8080
+EXPOSE 8084
 ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
