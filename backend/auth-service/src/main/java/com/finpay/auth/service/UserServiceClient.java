@@ -1,52 +1,50 @@
 package com.finpay.auth.service;
 
+import com.finpay.auth.client.UserServiceApi;
 import com.finpay.auth.dto.UserDto;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import java.util.UUID;
 
 /**
- * Client for calling user-service via Eureka service discovery.
- * Uses LoadBalancerClient to manually resolve the service instance,
- * avoiding the circular dependency that @LoadBalanced causes with Eureka.
+ * Resilience wrapper for user-service calls.
+ * Delegates to a declarative @HttpExchange client backed by a @LoadBalanced RestClient
+ * that resolves "user-service" via Eureka automatically.
+ *
+ * Aspect order: Retry ( CircuitBreaker ( Function ) )
+ * - @CircuitBreaker tracks failures and opens the circuit when threshold is exceeded.
+ *   No fallback here - exceptions propagate to @Retry so retries actually happen.
+ * - @Retry retries transient failures with exponential backoff. After all retries
+ *   are exhausted (or for non-retryable exceptions like CallNotPermittedException),
+ *   the fallback returns null so auth-service degrades to local credential data.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserServiceClient {
 
-    private final LoadBalancerClient loadBalancerClient;
-    private final RestClient restClient;
+    private final UserServiceApi userServiceApi;
 
-    /**
-     * Fetches the full user profile from user-service.
-     * This returns all fields including address, profileImageUrl, etc.
-     * that the auth-service's local user_credentials table doesn't store.
-     */
+    @CircuitBreaker(name = "user-service")
+    @Retry(name = "user-service", fallbackMethod = "userServiceFallback")
     public UserDto getUserProfile(UUID userId) {
-        try {
-            ServiceInstance instance = loadBalancerClient.choose("user-service");
-            if (instance == null) {
-                log.warn("No user-service instance available via Eureka");
-                return null;
-            }
+        log.debug("Fetching user profile from user-service for user: {}", userId);
+        return userServiceApi.getUserProfile(userId);
+    }
 
-            String url = instance.getUri() + "/api/v1/users/" + userId;
-            log.debug("Fetching full user profile from user-service at: {}", url);
+    private UserDto userServiceFallback(UUID userId, CallNotPermittedException e) {
+        log.warn("Circuit breaker is OPEN for user-service. Failing fast for user: {}", userId);
+        return null;
+    }
 
-            return restClient.get()
-                    .uri(url)
-                    .retrieve()
-                    .body(UserDto.class);
-        } catch (Exception e) {
-            log.warn("Failed to fetch user profile from user-service for user: {}. Falling back to local data. Error: {}",
-                    userId, e.getMessage());
-            return null;
-        }
+    private UserDto userServiceFallback(UUID userId, Exception e) {
+        log.warn("Fallback: user-service call failed for user {} after retries exhausted. Reason: {}",
+                userId, e.getMessage());
+        return null;
     }
 }

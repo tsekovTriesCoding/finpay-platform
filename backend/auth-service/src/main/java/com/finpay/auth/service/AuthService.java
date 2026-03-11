@@ -194,12 +194,9 @@ public class AuthService {
 
     private AuthResponse createAuthResponse(UserCredential credential) {
         // Try to fetch the full profile from user-service (has the real role, address, etc.)
-        UserDto userDto = null;
-        try {
-            userDto = userServiceClient.getUserProfile(credential.getId());
-        } catch (Exception e) {
-            log.debug("Could not fetch user profile from user-service: {}", e.getMessage());
-        }
+        // Circuit breaker in UserServiceClient handles failures gracefully
+        UserDto userDto = userServiceClient.getUserProfile(credential.getId());
+
         // Fall back to local credential data (role defaults to USER)
         if (userDto == null) {
             userDto = toUserDto(credential);
