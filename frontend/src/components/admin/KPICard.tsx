@@ -27,7 +27,9 @@ export default function KPICard({
           {loading ? (
             <div className="h-8 w-20 bg-dark-700 rounded animate-pulse mt-1" />
           ) : (
-            <p className="text-2xl font-bold mt-1">{value ?? '—'}</p>
+            <p className="text-2xl font-bold mt-1">
+              {value == null ? '-' : typeof value === 'number' ? value.toLocaleString('en-US') : value}
+            </p>
           )}
         </div>
         <Icon className="w-8 h-8 opacity-50" />

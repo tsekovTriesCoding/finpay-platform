@@ -8,6 +8,8 @@ import org.springframework.boot.test.context.SpringBootTest;
         properties = {
                 "eureka.client.enabled=false",
                 "spring.cloud.discovery.enabled=false",
+                "spring.cloud.loadbalancer.enabled=false",
+                "spring.cloud.gateway.server.webmvc.enabled=false",
                 "spring.autoconfigure.exclude=" +
                         "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration," +
                         "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration," +

@@ -20,10 +20,10 @@ test.describe('Admin Dashboard Page', () => {
   });
 
   test('user KPI values match mock data', async ({ adminPage: page }) => {
-    await expect(page.getByText(DASHBOARD_METRICS.totalUsers.toLocaleString(), { exact: true })).toBeVisible();
-    await expect(page.getByText(DASHBOARD_METRICS.activeUsers.toLocaleString(), { exact: true })).toBeVisible();
-    await expect(page.getByText(DASHBOARD_METRICS.suspendedUsers.toLocaleString(), { exact: true })).toBeVisible();
-    await expect(page.getByText(DASHBOARD_METRICS.pendingVerification.toLocaleString(), { exact: true })).toBeVisible();
+    await expect(page.getByText(DASHBOARD_METRICS.totalUsers.toLocaleString('en-US'), { exact: true })).toBeVisible();
+    await expect(page.getByText(DASHBOARD_METRICS.activeUsers.toLocaleString('en-US'), { exact: true })).toBeVisible();
+    await expect(page.getByText(DASHBOARD_METRICS.suspendedUsers.toLocaleString('en-US'), { exact: true })).toBeVisible();
+    await expect(page.getByText(DASHBOARD_METRICS.pendingVerification.toLocaleString('en-US'), { exact: true })).toBeVisible();
   });
 
   // Transaction Volume row
@@ -36,9 +36,9 @@ test.describe('Admin Dashboard Page', () => {
   });
 
   test('transaction KPI values match mock data', async ({ adminPage: page }) => {
-    await expect(page.getByText(TRANSACTION_METRICS.totalTransfers.toLocaleString(), { exact: true })).toBeVisible();
-    await expect(page.getByText(TRANSACTION_METRICS.failedTransfers.toLocaleString(), { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(TRANSACTION_METRICS.totalBillPayments.toLocaleString(), { exact: true })).toBeVisible();
+    await expect(page.getByText(TRANSACTION_METRICS.totalTransfers.toLocaleString('en-US'), { exact: true })).toBeVisible();
+    await expect(page.getByText(TRANSACTION_METRICS.failedTransfers.toLocaleString('en-US'), { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(TRANSACTION_METRICS.totalBillPayments.toLocaleString('en-US'), { exact: true })).toBeVisible();
   });
 
   // Wallets & Activity row
@@ -51,9 +51,9 @@ test.describe('Admin Dashboard Page', () => {
   });
 
   test('wallet KPI values match mock data', async ({ adminPage: page }) => {
-    await expect(page.getByText(WALLET_METRICS.totalWallets.toLocaleString(), { exact: true })).toBeVisible();
-    await expect(page.getByText(WALLET_METRICS.frozenWallets.toLocaleString(), { exact: true })).toBeVisible();
-    await expect(page.getByText(DASHBOARD_METRICS.recentAuditActions24h.toLocaleString(), { exact: true })).toBeVisible();
+    await expect(page.getByText(WALLET_METRICS.totalWallets.toLocaleString('en-US'), { exact: true })).toBeVisible();
+    await expect(page.getByText(WALLET_METRICS.frozenWallets.toLocaleString('en-US'), { exact: true })).toBeVisible();
+    await expect(page.getByText(DASHBOARD_METRICS.recentAuditActions24h.toLocaleString('en-US'), { exact: true })).toBeVisible();
   });
 
   // Charts / breakdowns
