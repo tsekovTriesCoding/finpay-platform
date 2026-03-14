@@ -1,13 +1,14 @@
 package com.finpay.notification;
 
+import com.finpay.notification.testconfig.TestcontainersConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@EmbeddedKafka(partitions = 1, topics = {"user-events", "payment-events"})
+@Import(TestcontainersConfig.class)
 class NotificationServiceApplicationTests {
 
     @Test
