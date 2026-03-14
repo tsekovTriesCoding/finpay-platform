@@ -189,12 +189,26 @@ Every service uses a shared `finpay-outbox-starter` library that persists Kafka 
 ### SAGA Orchestration
 The Payment Service acts as the SAGA orchestrator for all financial flows:
 
-```
-Money Transfer SAGA:
-  INITIATE → RESERVE funds → DEDUCT from sender → CREDIT to recipient → NOTIFY → COMPLETE
+```mermaid
+flowchart LR
+    subgraph Happy Path
+        A[INITIATE] --> B[RESERVE funds]
+        B --> C[DEDUCT from sender]
+        C --> D[CREDIT to recipient]
+        D --> E[NOTIFY]
+        E --> F[COMPLETE]
+    end
 
-Compensation (on failure at any step):
-  COMPENSATING → reverse credits → release reserves → COMPENSATED
+    subgraph Compensation
+        G[COMPENSATING] --> H[Reverse credits]
+        H --> I[Release reserves]
+        I --> J[COMPENSATED]
+    end
+
+    B -- failure --> G
+    C -- failure --> G
+    D -- failure --> G
+    E -- failure --> G
 ```
 
 Each SAGA entity (`MoneyTransfer`, `BillPayment`, `MoneyRequest`) tracks individual step completion flags (`fundsReserved`, `fundsDeducted`, `fundsCredited`, `notificationSent`) and compensation state for reliable rollback.
