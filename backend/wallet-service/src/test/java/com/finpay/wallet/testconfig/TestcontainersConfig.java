@@ -7,6 +7,8 @@ import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import com.redis.testcontainers.RedisContainer;
+
 /**
  * Shared Testcontainers configuration for wallet-service integration tests.
  */
@@ -27,6 +29,13 @@ public class TestcontainersConfig {
     @ServiceConnection(name = "kafka")
     public ConfluentKafkaContainer kafkaContainer() {
         return new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"))
+                .withReuse(true);
+    }
+
+    @Bean
+    @ServiceConnection(name = "redis")
+    public RedisContainer redisContainer() {
+        return new RedisContainer(DockerImageName.parse("redis:7-alpine"))
                 .withReuse(true);
     }
 }

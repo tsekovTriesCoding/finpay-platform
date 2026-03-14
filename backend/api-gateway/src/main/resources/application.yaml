@@ -22,6 +22,11 @@ spring:
           enabled: true
           lower-case-service-id: true
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
 # Routes are defined programmatically in GatewayRoutesConfig.java
 # CORS is handled by CorsConfig.java
 
@@ -89,3 +94,13 @@ springdoc:
       - name: Notification Service
         url: /api-docs/notification-service
     urls-primary-name: Auth Service
+
+# Redis-backed rate limiting
+rate-limiting:
+  enabled: true
+  default-rate: 100
+  default-window-seconds: 60
+  auth-rate: 20
+  auth-window-seconds: 60
+  admin-rate: 200
+  admin-window-seconds: 60

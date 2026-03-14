@@ -8,6 +8,7 @@ import com.finpay.auth.kafka.AuthEventProducer;
 import com.finpay.auth.repository.RefreshTokenRepository;
 import com.finpay.auth.repository.UserCredentialRepository;
 import com.finpay.auth.service.CookieService;
+import com.finpay.auth.util.TokenHashUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -55,9 +56,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             String accessToken = jwtService.generateAccessToken(user);
             String refreshTokenValue = jwtService.generateRefreshToken(user);
             
-            // Save refresh token
+            // Save only the hash - never persist the raw token
             RefreshToken refreshToken = RefreshToken.builder()
-                    .token(refreshTokenValue)
+                    .tokenHash(TokenHashUtil.sha256(refreshTokenValue))
                     .userId(user.id())
                     .userEmail(user.email())
                     .expiryDate(LocalDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))

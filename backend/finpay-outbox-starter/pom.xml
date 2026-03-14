@@ -18,7 +18,7 @@
         configuration auto-configured.
     </description>
 
-    <!-- This is a plain library JAR — NOT a Spring Boot fat-jar -->
+    <!-- This is a plain library JAR - NOT a Spring Boot fat-jar -->
     <packaging>jar</packaging>
 
     <dependencies>
@@ -36,6 +36,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+
+        <!-- Redis (optional - used for fast idempotency dedup when available) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <dependency>

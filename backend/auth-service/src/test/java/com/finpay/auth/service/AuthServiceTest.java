@@ -12,6 +12,7 @@ import com.finpay.auth.kafka.AuthEventProducer;
 import com.finpay.auth.repository.RefreshTokenRepository;
 import com.finpay.auth.repository.UserCredentialRepository;
 import com.finpay.auth.security.JwtService;
+import com.finpay.auth.util.TokenHashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -44,6 +45,8 @@ class AuthServiceTest {
     @Mock private JwtService jwtService;
     @Mock private AuthEventProducer authEventProducer;
     @Mock private UserServiceClient userServiceClient;
+    @Mock private TokenBlocklistService tokenBlocklistService;
+    @Mock private UserSessionCacheService sessionCacheService;
 
     @InjectMocks private AuthService authService;
 
@@ -250,14 +253,14 @@ class AuthServiceTest {
 
             RefreshToken validToken = RefreshToken.builder()
                     .id(UUID.randomUUID())
-                    .token("suspended-user-token")
+                    .tokenHash(TokenHashUtil.sha256("suspended-user-token"))
                     .userId(savedCredential.getId())
                     .userEmail("john@example.com")
                     .expiryDate(LocalDateTime.now().plusDays(7))
                     .revoked(false)
                     .build();
 
-            when(refreshTokenRepository.findByToken("suspended-user-token")).thenReturn(Optional.of(validToken));
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("suspended-user-token"))).thenReturn(Optional.of(validToken));
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
             when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(validToken);
 
@@ -276,14 +279,14 @@ class AuthServiceTest {
         void shouldRefreshTokenSuccessfully() {
             RefreshToken validToken = RefreshToken.builder()
                     .id(UUID.randomUUID())
-                    .token("valid-refresh-token")
+                    .tokenHash(TokenHashUtil.sha256("valid-refresh-token"))
                     .userId(savedCredential.getId())
                     .userEmail("john@example.com")
                     .expiryDate(LocalDateTime.now().plusDays(7))
                     .revoked(false)
                     .build();
 
-            when(refreshTokenRepository.findByToken("valid-refresh-token")).thenReturn(Optional.of(validToken));
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("valid-refresh-token"))).thenReturn(Optional.of(validToken));
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
             when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(validToken);
             when(jwtService.generateAccessToken(any())).thenReturn("new-access-token");
@@ -302,7 +305,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("should throw exception for invalid refresh token")
         void shouldThrowForInvalidRefreshToken() {
-            when(refreshTokenRepository.findByToken("invalid-token")).thenReturn(Optional.empty());
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("invalid-token"))).thenReturn(Optional.empty());
 
             RefreshTokenRequest request = new RefreshTokenRequest("invalid-token");
             assertThatThrownBy(() -> authService.refreshToken(request))
@@ -315,14 +318,14 @@ class AuthServiceTest {
         void shouldThrowForExpiredRefreshToken() {
             RefreshToken expiredToken = RefreshToken.builder()
                     .id(UUID.randomUUID())
-                    .token("expired-token")
+                    .tokenHash(TokenHashUtil.sha256("expired-token"))
                     .userId(savedCredential.getId())
                     .userEmail("john@example.com")
                     .expiryDate(LocalDateTime.now().minusDays(1))
                     .revoked(false)
                     .build();
 
-            when(refreshTokenRepository.findByToken("expired-token")).thenReturn(Optional.of(expiredToken));
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("expired-token"))).thenReturn(Optional.of(expiredToken));
 
             RefreshTokenRequest request = new RefreshTokenRequest("expired-token");
             assertThatThrownBy(() -> authService.refreshToken(request))
@@ -340,14 +343,14 @@ class AuthServiceTest {
         void shouldLogoutSuccessfully() {
             RefreshToken token = RefreshToken.builder()
                     .id(UUID.randomUUID())
-                    .token("refresh-token")
+                    .tokenHash(TokenHashUtil.sha256("refresh-token"))
                     .revoked(false)
                     .build();
 
-            when(refreshTokenRepository.findByToken("refresh-token")).thenReturn(Optional.of(token));
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("refresh-token"))).thenReturn(Optional.of(token));
             when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(token);
 
-            authService.logout("refresh-token");
+            authService.logout("refresh-token", null);
 
             assertThat(token.isRevoked()).isTrue();
             verify(refreshTokenRepository).save(token);
@@ -434,7 +437,11 @@ class AuthServiceTest {
             savedCredential.setEnabled(false);
 
             when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserId("valid-token")).thenReturn(savedCredential.getId().toString());
+            when(jwtService.extractExpiration("valid-token")).thenReturn(new java.util.Date(System.currentTimeMillis() + 60000));
+            when(tokenBlocklistService.isBlocked(anyString())).thenReturn(false);
             when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(savedCredential.getId());
+            when(sessionCacheService.getCachedSession(savedCredential.getId())).thenReturn(null);
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
 
             assertThatThrownBy(() -> authService.getCurrentUser("valid-token"))
@@ -448,7 +455,11 @@ class AuthServiceTest {
         @DisplayName("should return user profile for active user")
         void shouldReturnProfileForActiveUser() {
             when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserId("valid-token")).thenReturn(savedCredential.getId().toString());
+            when(jwtService.extractExpiration("valid-token")).thenReturn(new java.util.Date(System.currentTimeMillis() + 60000));
+            when(tokenBlocklistService.isBlocked(anyString())).thenReturn(false);
             when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(savedCredential.getId());
+            when(sessionCacheService.getCachedSession(savedCredential.getId())).thenReturn(null);
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
 
             UserDto fullProfile = new UserDto(
@@ -469,7 +480,11 @@ class AuthServiceTest {
         @DisplayName("should fall back to local credential when user-service is unavailable")
         void shouldFallBackToLocalCredential() {
             when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserId("valid-token")).thenReturn(savedCredential.getId().toString());
+            when(jwtService.extractExpiration("valid-token")).thenReturn(new java.util.Date(System.currentTimeMillis() + 60000));
+            when(tokenBlocklistService.isBlocked(anyString())).thenReturn(false);
             when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(savedCredential.getId());
+            when(sessionCacheService.getCachedSession(savedCredential.getId())).thenReturn(null);
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
             when(userServiceClient.getUserProfile(savedCredential.getId())).thenReturn(null);
 
@@ -495,7 +510,11 @@ class AuthServiceTest {
         void shouldThrowWhenUserNotFound() {
             UUID missingId = UUID.randomUUID();
             when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserId("valid-token")).thenReturn(missingId.toString());
+            when(jwtService.extractExpiration("valid-token")).thenReturn(new java.util.Date(System.currentTimeMillis() + 60000));
+            when(tokenBlocklistService.isBlocked(anyString())).thenReturn(false);
             when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(missingId);
+            when(sessionCacheService.getCachedSession(missingId)).thenReturn(null);
             when(credentialRepository.findById(missingId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.getCurrentUser("valid-token"))

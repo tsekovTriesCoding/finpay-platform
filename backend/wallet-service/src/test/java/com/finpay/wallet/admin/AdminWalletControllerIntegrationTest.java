@@ -42,12 +42,16 @@ class AdminWalletControllerIntegrationTest {
     @Autowired
     private WalletTransactionRepository walletTransactionRepository;
 
+    @Autowired
+    private WalletAnalyticsCacheService analyticsCacheService;
+
     private static final UUID ADMIN_ID = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
         walletTransactionRepository.deleteAll();
         walletRepository.deleteAll();
+        analyticsCacheService.evictMetrics();
     }
 
     private Wallet createWalletInDb(UUID userId, BigDecimal balance, Wallet.WalletStatus status) {

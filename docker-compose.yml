@@ -64,6 +64,23 @@ services:
     networks:
       - finpay-network
 
+  # Redis - session caching, rate limiting, idempotency dedup, analytics cache
+  redis:
+    image: redis:7-alpine
+    container_name: finpay-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - finpay-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ==========================================
   # Observability Stack
   # ==========================================
@@ -135,5 +152,6 @@ networks:
 
 volumes:
   mysql_data:
+  redis_data:
   prometheus_data:
   grafana_data:

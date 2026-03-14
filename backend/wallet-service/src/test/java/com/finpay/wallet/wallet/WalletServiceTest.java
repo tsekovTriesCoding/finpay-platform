@@ -34,6 +34,7 @@ class WalletServiceTest {
     @Mock private WalletRepository walletRepository;
     @Mock private WalletTransactionService transactionService;
     @Mock private WalletMapper walletMapper;
+    @Mock private WalletCacheService walletCacheService;
 
     @InjectMocks private WalletService walletService;
 

@@ -14,6 +14,7 @@ import com.finpay.auth.kafka.AuthEventProducer;
 import com.finpay.auth.repository.RefreshTokenRepository;
 import com.finpay.auth.repository.UserCredentialRepository;
 import com.finpay.auth.security.JwtService;
+import com.finpay.auth.util.TokenHashUtil;
 import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -41,6 +45,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthEventProducer authEventProducer;
     private final UserServiceClient userServiceClient;
+    private final TokenBlocklistService tokenBlocklistService;
+    private final UserSessionCacheService sessionCacheService;
 
     @Observed(name = "auth.register", contextualName = "register-user")
     public AuthResponse register(RegisterRequest request) {
@@ -125,7 +131,7 @@ public class AuthService {
     public AuthResponse refreshToken(RefreshTokenRequest request) {
         log.debug("Refreshing token");
 
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.refreshToken())
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256(request.refreshToken()))
                 .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
 
         if (!refreshToken.isValid()) {
@@ -152,27 +158,47 @@ public class AuthService {
     }
 
     @Observed(name = "auth.logout", contextualName = "logout-user")
-    public void logout(String refreshTokenValue) {
+    public void logout(String refreshTokenValue, String accessToken) {
         log.debug("Logging out user");
 
-        refreshTokenRepository.findByToken(refreshTokenValue)
+        // Block the access token in Redis so it can't be reused
+        if (accessToken != null && !accessToken.isBlank()) {
+            blockAccessToken(accessToken);
+        }
+
+        refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256(refreshTokenValue))
                 .ifPresent(token -> {
                     token.setRevoked(true);
                     refreshTokenRepository.save(token);
+                    sessionCacheService.evictSession(token.getUserId());
                 });
     }
 
     public void logoutAll(UUID userId) {
         log.debug("Logging out all sessions for user: {}", userId);
         refreshTokenRepository.revokeAllByUserId(userId);
+        sessionCacheService.evictSession(userId);
     }
 
     public UserDto getCurrentUser(String token) {
         if (!jwtService.isTokenValid(token)) {
             throw new InvalidTokenException("Invalid or expired token");
         }
-        
+
+        // Check if token has been revoked via Redis blocklist
+        String tokenId = jwtService.extractUserId(token) + ":" + jwtService.extractExpiration(token).getTime();
+        if (tokenBlocklistService.isBlocked(tokenId)) {
+            throw new InvalidTokenException("Token has been revoked");
+        }
+
         UUID userId = jwtService.extractUserIdAsUUID(token);
+
+        // Try Redis session cache first
+        UserDto cached = sessionCacheService.getCachedSession(userId);
+        if (cached != null) {
+            return cached;
+        }
+
         UserCredential credential = credentialRepository.findById(userId)
                 .orElseThrow(() -> new InvalidTokenException("User not found"));
 
@@ -184,12 +210,16 @@ public class AuthService {
         // Try to fetch the full profile from user-service (has address, fresh profileImageUrl, etc.)
         UserDto fullProfile = userServiceClient.getUserProfile(userId);
         if (fullProfile != null) {
-            return fullProfile.withoutPassword();
+            UserDto result = fullProfile.withoutPassword();
+            sessionCacheService.cacheUserSession(userId, result);
+            return result;
         }
         
         // Fall back to local credential data if user-service is unavailable
         log.debug("Using local credential data for user: {} (user-service unavailable)", userId);
-        return toUserDto(credential);
+        UserDto result = toUserDto(credential);
+        sessionCacheService.cacheUserSession(userId, result);
+        return result;
     }
 
     private AuthResponse createAuthResponse(UserCredential credential) {
@@ -210,9 +240,9 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(userDto);
         String refreshTokenValue = jwtService.generateRefreshToken(userDto);
 
-        // Save refresh token
+        // Save only the hash - never persist the raw token
         RefreshToken refreshToken = RefreshToken.builder()
-                .token(refreshTokenValue)
+                .tokenHash(TokenHashUtil.sha256(refreshTokenValue))
                 .userId(credential.getId())
                 .userEmail(credential.getEmail())
                 .expiryDate(LocalDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))
@@ -286,5 +316,17 @@ public class AuthService {
         authEventProducer.publishPlanUpgraded(event);
 
         return UpgradePlanResponse.success(userId.toString(), previousPlanName, newPlan.name());
+    }
+
+    private void blockAccessToken(String accessToken) {
+        try {
+            String userId = jwtService.extractUserId(accessToken);
+            Date expiration = jwtService.extractExpiration(accessToken);
+            String tokenId = userId + ":" + expiration.getTime();
+            Duration ttl = Duration.between(Instant.now(), expiration.toInstant());
+            tokenBlocklistService.blockToken(tokenId, ttl);
+        } catch (Exception e) {
+            log.debug("Could not block access token (may already be expired): {}", e.getMessage());
+        }
     }
 }

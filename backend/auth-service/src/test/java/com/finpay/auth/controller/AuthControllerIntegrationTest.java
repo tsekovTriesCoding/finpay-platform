@@ -8,6 +8,7 @@ import com.finpay.auth.entity.AccountPlan;
 import com.finpay.auth.entity.RefreshToken;
 import com.finpay.auth.entity.UserCredential;
 import com.finpay.auth.repository.RefreshTokenRepository;
+import com.finpay.auth.util.TokenHashUtil;
 import com.finpay.auth.repository.UserCredentialRepository;
 import com.finpay.auth.service.UserServiceClient;
 import com.finpay.auth.testconfig.TestcontainersConfig;
@@ -219,7 +220,7 @@ class AuthControllerIntegrationTest {
             UserCredential user = insertTestUser("refresh@test.com");
             String tokenValue = "test-refresh-token-" + UUID.randomUUID();
             RefreshToken token = RefreshToken.builder()
-                    .token(tokenValue)
+                    .tokenHash(TokenHashUtil.sha256(tokenValue))
                     .userId(user.getId())
                     .userEmail(user.getEmail())
                     .expiryDate(LocalDateTime.now().plusHours(1))
@@ -254,7 +255,7 @@ class AuthControllerIntegrationTest {
             UserCredential user = insertTestUser("logout@test.com");
             String tokenValue = "test-refresh-token-" + UUID.randomUUID();
             RefreshToken token = RefreshToken.builder()
-                    .token(tokenValue)
+                    .tokenHash(TokenHashUtil.sha256(tokenValue))
                     .userId(user.getId())
                     .userEmail(user.getEmail())
                     .expiryDate(LocalDateTime.now().plusHours(1))
