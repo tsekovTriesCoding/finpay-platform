@@ -12,6 +12,7 @@ import com.finpay.auth.kafka.AuthEventProducer;
 import com.finpay.auth.repository.RefreshTokenRepository;
 import com.finpay.auth.repository.UserCredentialRepository;
 import com.finpay.auth.security.JwtService;
+import com.finpay.auth.util.TokenHashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -252,14 +253,14 @@ class AuthServiceTest {
 
             RefreshToken validToken = RefreshToken.builder()
                     .id(UUID.randomUUID())
-                    .token("suspended-user-token")
+                    .tokenHash(TokenHashUtil.sha256("suspended-user-token"))
                     .userId(savedCredential.getId())
                     .userEmail("john@example.com")
                     .expiryDate(LocalDateTime.now().plusDays(7))
                     .revoked(false)
                     .build();
 
-            when(refreshTokenRepository.findByToken("suspended-user-token")).thenReturn(Optional.of(validToken));
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("suspended-user-token"))).thenReturn(Optional.of(validToken));
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
             when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(validToken);
 
@@ -278,14 +279,14 @@ class AuthServiceTest {
         void shouldRefreshTokenSuccessfully() {
             RefreshToken validToken = RefreshToken.builder()
                     .id(UUID.randomUUID())
-                    .token("valid-refresh-token")
+                    .tokenHash(TokenHashUtil.sha256("valid-refresh-token"))
                     .userId(savedCredential.getId())
                     .userEmail("john@example.com")
                     .expiryDate(LocalDateTime.now().plusDays(7))
                     .revoked(false)
                     .build();
 
-            when(refreshTokenRepository.findByToken("valid-refresh-token")).thenReturn(Optional.of(validToken));
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("valid-refresh-token"))).thenReturn(Optional.of(validToken));
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
             when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(validToken);
             when(jwtService.generateAccessToken(any())).thenReturn("new-access-token");
@@ -304,7 +305,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("should throw exception for invalid refresh token")
         void shouldThrowForInvalidRefreshToken() {
-            when(refreshTokenRepository.findByToken("invalid-token")).thenReturn(Optional.empty());
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("invalid-token"))).thenReturn(Optional.empty());
 
             RefreshTokenRequest request = new RefreshTokenRequest("invalid-token");
             assertThatThrownBy(() -> authService.refreshToken(request))
@@ -317,14 +318,14 @@ class AuthServiceTest {
         void shouldThrowForExpiredRefreshToken() {
             RefreshToken expiredToken = RefreshToken.builder()
                     .id(UUID.randomUUID())
-                    .token("expired-token")
+                    .tokenHash(TokenHashUtil.sha256("expired-token"))
                     .userId(savedCredential.getId())
                     .userEmail("john@example.com")
                     .expiryDate(LocalDateTime.now().minusDays(1))
                     .revoked(false)
                     .build();
 
-            when(refreshTokenRepository.findByToken("expired-token")).thenReturn(Optional.of(expiredToken));
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("expired-token"))).thenReturn(Optional.of(expiredToken));
 
             RefreshTokenRequest request = new RefreshTokenRequest("expired-token");
             assertThatThrownBy(() -> authService.refreshToken(request))
@@ -342,11 +343,11 @@ class AuthServiceTest {
         void shouldLogoutSuccessfully() {
             RefreshToken token = RefreshToken.builder()
                     .id(UUID.randomUUID())
-                    .token("refresh-token")
+                    .tokenHash(TokenHashUtil.sha256("refresh-token"))
                     .revoked(false)
                     .build();
 
-            when(refreshTokenRepository.findByToken("refresh-token")).thenReturn(Optional.of(token));
+            when(refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256("refresh-token"))).thenReturn(Optional.of(token));
             when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(token);
 
             authService.logout("refresh-token", null);

@@ -2,6 +2,7 @@ package com.finpay.auth.repository;
 
 import com.finpay.auth.entity.RefreshToken;
 import com.finpay.auth.testconfig.TestMySQLContainerConfig;
+import com.finpay.auth.util.TokenHashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,7 +41,7 @@ class RefreshTokenRepositoryTest {
         repository.deleteAll();
         userId = UUID.randomUUID();
         testToken = RefreshToken.builder()
-                .token("test-refresh-token-" + UUID.randomUUID())
+                .tokenHash(TokenHashUtil.sha256("test-refresh-token-" + UUID.randomUUID()))
                 .userId(userId)
                 .userEmail("john@example.com")
                 .expiryDate(LocalDateTime.now().plusDays(7))
@@ -57,7 +58,7 @@ class RefreshTokenRepositoryTest {
         void shouldFindByToken() {
             RefreshToken saved = repository.save(testToken);
 
-            Optional<RefreshToken> found = repository.findByToken(testToken.getToken());
+            Optional<RefreshToken> found = repository.findByTokenHash(testToken.getTokenHash());
 
             assertThat(found).isPresent();
             assertThat(found.get().getUserId()).isEqualTo(userId);
@@ -67,7 +68,7 @@ class RefreshTokenRepositoryTest {
         @Test
         @DisplayName("should return empty for non-existent token")
         void shouldReturnEmptyForNonExistentToken() {
-            Optional<RefreshToken> found = repository.findByToken("non-existent-token");
+            Optional<RefreshToken> found = repository.findByTokenHash(TokenHashUtil.sha256("non-existent-token"));
 
             assertThat(found).isEmpty();
         }
@@ -82,14 +83,14 @@ class RefreshTokenRepositoryTest {
         void shouldRevokeAllTokensForUser() {
             // Create multiple tokens for the same user
             RefreshToken token1 = RefreshToken.builder()
-                    .token("token-1-" + UUID.randomUUID())
+                    .tokenHash(TokenHashUtil.sha256("token-1-" + UUID.randomUUID()))
                     .userId(userId)
                     .userEmail("john@example.com")
                     .expiryDate(LocalDateTime.now().plusDays(7))
                     .revoked(false)
                     .build();
             RefreshToken token2 = RefreshToken.builder()
-                    .token("token-2-" + UUID.randomUUID())
+                    .tokenHash(TokenHashUtil.sha256("token-2-" + UUID.randomUUID()))
                     .userId(userId)
                     .userEmail("john@example.com")
                     .expiryDate(LocalDateTime.now().plusDays(7))
@@ -104,8 +105,8 @@ class RefreshTokenRepositoryTest {
             entityManager.getEntityManager().clear();
 
             // Verify all tokens are revoked
-            Optional<RefreshToken> found1 = repository.findByToken(token1.getToken());
-            Optional<RefreshToken> found2 = repository.findByToken(token2.getToken());
+            Optional<RefreshToken> found1 = repository.findByTokenHash(token1.getTokenHash());
+            Optional<RefreshToken> found2 = repository.findByTokenHash(token2.getTokenHash());
 
             assertThat(found1).isPresent();
             assertThat(found1.get().isRevoked()).isTrue();
@@ -118,7 +119,7 @@ class RefreshTokenRepositoryTest {
         void shouldNotRevokeOtherUsersTokens() {
             UUID otherUserId = UUID.randomUUID();
             RefreshToken otherToken = RefreshToken.builder()
-                    .token("other-token-" + UUID.randomUUID())
+                    .tokenHash(TokenHashUtil.sha256("other-token-" + UUID.randomUUID()))
                     .userId(otherUserId)
                     .userEmail("other@example.com")
                     .expiryDate(LocalDateTime.now().plusDays(7))
@@ -131,7 +132,7 @@ class RefreshTokenRepositoryTest {
             repository.revokeAllByUserId(userId);
 
             // Other user's token should still be valid
-            Optional<RefreshToken> found = repository.findByToken(otherToken.getToken());
+            Optional<RefreshToken> found = repository.findByTokenHash(otherToken.getTokenHash());
             assertThat(found).isPresent();
             assertThat(found.get().isRevoked()).isFalse();
         }
@@ -145,7 +146,7 @@ class RefreshTokenRepositoryTest {
         @DisplayName("should delete expired tokens")
         void shouldDeleteExpiredTokens() {
             RefreshToken expiredToken = RefreshToken.builder()
-                    .token("expired-token-" + UUID.randomUUID())
+                    .tokenHash(TokenHashUtil.sha256("expired-token-" + UUID.randomUUID()))
                     .userId(userId)
                     .userEmail("john@example.com")
                     .expiryDate(LocalDateTime.now().minusDays(1))
@@ -157,8 +158,8 @@ class RefreshTokenRepositoryTest {
 
             repository.deleteExpiredTokens(LocalDateTime.now());
 
-            assertThat(repository.findByToken(testToken.getToken())).isPresent();
-            assertThat(repository.findByToken(expiredToken.getToken())).isEmpty();
+            assertThat(repository.findByTokenHash(testToken.getTokenHash())).isPresent();
+            assertThat(repository.findByTokenHash(expiredToken.getTokenHash())).isEmpty();
         }
     }
 
@@ -170,7 +171,7 @@ class RefreshTokenRepositoryTest {
         @DisplayName("should report valid token")
         void shouldReportValidToken() {
             RefreshToken saved = repository.save(testToken);
-            Optional<RefreshToken> found = repository.findByToken(testToken.getToken());
+            Optional<RefreshToken> found = repository.findByTokenHash(testToken.getTokenHash());
 
             assertThat(found).isPresent();
             assertThat(found.get().isValid()).isTrue();
@@ -183,7 +184,7 @@ class RefreshTokenRepositoryTest {
             testToken.setRevoked(true);
             repository.save(testToken);
 
-            Optional<RefreshToken> found = repository.findByToken(testToken.getToken());
+            Optional<RefreshToken> found = repository.findByTokenHash(testToken.getTokenHash());
 
             assertThat(found).isPresent();
             assertThat(found.get().isValid()).isFalse();
@@ -195,7 +196,7 @@ class RefreshTokenRepositoryTest {
             testToken.setExpiryDate(LocalDateTime.now().minusDays(1));
             repository.save(testToken);
 
-            Optional<RefreshToken> found = repository.findByToken(testToken.getToken());
+            Optional<RefreshToken> found = repository.findByTokenHash(testToken.getTokenHash());
 
             assertThat(found).isPresent();
             assertThat(found.get().isValid()).isFalse();

@@ -14,6 +14,7 @@ import com.finpay.auth.kafka.AuthEventProducer;
 import com.finpay.auth.repository.RefreshTokenRepository;
 import com.finpay.auth.repository.UserCredentialRepository;
 import com.finpay.auth.security.JwtService;
+import com.finpay.auth.util.TokenHashUtil;
 import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -130,7 +131,7 @@ public class AuthService {
     public AuthResponse refreshToken(RefreshTokenRequest request) {
         log.debug("Refreshing token");
 
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.refreshToken())
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256(request.refreshToken()))
                 .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
 
         if (!refreshToken.isValid()) {
@@ -165,7 +166,7 @@ public class AuthService {
             blockAccessToken(accessToken);
         }
 
-        refreshTokenRepository.findByToken(refreshTokenValue)
+        refreshTokenRepository.findByTokenHash(TokenHashUtil.sha256(refreshTokenValue))
                 .ifPresent(token -> {
                     token.setRevoked(true);
                     refreshTokenRepository.save(token);
@@ -239,9 +240,9 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(userDto);
         String refreshTokenValue = jwtService.generateRefreshToken(userDto);
 
-        // Save refresh token
+        // Save only the hash - never persist the raw token
         RefreshToken refreshToken = RefreshToken.builder()
-                .token(refreshTokenValue)
+                .tokenHash(TokenHashUtil.sha256(refreshTokenValue))
                 .userId(credential.getId())
                 .userEmail(credential.getEmail())
                 .expiryDate(LocalDateTime.now().plusSeconds(jwtService.getRefreshTokenExpiration() / 1000))
