@@ -3,6 +3,7 @@ package com.finpay.outbox;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.outbox.config.OutboxKafkaMessageConfig;
 import com.finpay.outbox.idempotency.IdempotentConsumerService;
+import com.finpay.outbox.idempotency.RedisIdempotentConsumerService;
 import com.finpay.outbox.publisher.OutboxPublisher;
 import com.finpay.outbox.repository.OutboxEventRepository;
 import com.finpay.outbox.repository.ProcessedEventRepository;
@@ -10,10 +11,13 @@ import com.finpay.outbox.service.OutboxService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -58,6 +62,19 @@ public class OutboxAutoConfiguration {
     }
 
     // Idempotency (consumer side)
+    // When Redis is available, use the Redis-accelerated implementation.
+    // Otherwise, fall back to the database-only implementation.
+
+    @Bean
+    @ConditionalOnClass(StringRedisTemplate.class)
+    @ConditionalOnBean(StringRedisTemplate.class)
+    @Primary
+    public IdempotentConsumerService redisIdempotentConsumerService(
+            ProcessedEventRepository processedEventRepository,
+            OutboxProperties properties,
+            StringRedisTemplate redisTemplate) {
+        return new RedisIdempotentConsumerService(processedEventRepository, properties, redisTemplate);
+    }
 
     @Bean
     @ConditionalOnMissingBean(IdempotentConsumerService.class)

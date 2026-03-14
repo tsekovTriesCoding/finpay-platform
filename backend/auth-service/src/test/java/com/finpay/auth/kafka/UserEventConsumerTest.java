@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finpay.auth.entity.UserCredential;
 import com.finpay.auth.repository.RefreshTokenRepository;
 import com.finpay.auth.repository.UserCredentialRepository;
+import com.finpay.auth.service.UserSessionCacheService;
 import com.finpay.outbox.idempotency.IdempotentConsumerService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,8 +32,9 @@ class UserEventConsumerTest {
 
     @Mock private UserCredentialRepository credentialRepository;
     @Mock private RefreshTokenRepository refreshTokenRepository;
-    @Spy  private ObjectMapper objectMapper = new ObjectMapper();
+    @Spy  private ObjectMapper objectMapper;
     @Mock private IdempotentConsumerService idempotentConsumer;
+    @Mock private UserSessionCacheService sessionCacheService;
 
     @InjectMocks private UserEventConsumer consumer;
 

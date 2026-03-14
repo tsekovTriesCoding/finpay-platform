@@ -24,6 +24,7 @@ public class AdminWalletService {
 
     private final WalletRepository walletRepository;
     private final WalletService walletService;
+    private final WalletAnalyticsCacheService analyticsCacheService;
 
     /**
      * List all wallets with server-side pagination, sorting, and filtering.
@@ -50,6 +51,7 @@ public class AdminWalletService {
     @Transactional
     public WalletResponse freezeWallet(UUID userId) {
         walletService.freezeWallet(userId);
+        analyticsCacheService.evictMetrics();
         return walletService.getWalletByUserId(userId);
     }
 
@@ -59,13 +61,20 @@ public class AdminWalletService {
     @Transactional
     public WalletResponse unfreezeWallet(UUID userId) {
         walletService.unfreezeWallet(userId);
+        analyticsCacheService.evictMetrics();
         return walletService.getWalletByUserId(userId);
     }
 
     /**
      * Get wallet metrics for admin dashboard.
+     * Uses Redis cache to avoid expensive aggregate queries.
      */
     public AdminWalletMetrics getWalletMetrics() {
+        AdminWalletMetrics cached = analyticsCacheService.getCachedMetrics();
+        if (cached != null) {
+            return cached;
+        }
+
         long totalWallets = walletRepository.count();
         long activeWallets = walletRepository.countByStatus(Wallet.WalletStatus.ACTIVE);
         long frozenWallets = walletRepository.countByStatus(Wallet.WalletStatus.FROZEN);
@@ -75,7 +84,10 @@ public class AdminWalletService {
                 .map(Wallet::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new AdminWalletMetrics(totalWallets, activeWallets, frozenWallets, closedWallets, totalBalance);
+        AdminWalletMetrics metrics = new AdminWalletMetrics(
+                totalWallets, activeWallets, frozenWallets, closedWallets, totalBalance);
+        analyticsCacheService.cacheMetrics(metrics);
+        return metrics;
     }
 
     private WalletResponse toWalletResponse(Wallet w) {

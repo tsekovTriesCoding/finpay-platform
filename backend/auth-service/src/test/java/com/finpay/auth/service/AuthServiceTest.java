@@ -44,6 +44,8 @@ class AuthServiceTest {
     @Mock private JwtService jwtService;
     @Mock private AuthEventProducer authEventProducer;
     @Mock private UserServiceClient userServiceClient;
+    @Mock private TokenBlocklistService tokenBlocklistService;
+    @Mock private UserSessionCacheService sessionCacheService;
 
     @InjectMocks private AuthService authService;
 
@@ -347,7 +349,7 @@ class AuthServiceTest {
             when(refreshTokenRepository.findByToken("refresh-token")).thenReturn(Optional.of(token));
             when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(token);
 
-            authService.logout("refresh-token");
+            authService.logout("refresh-token", null);
 
             assertThat(token.isRevoked()).isTrue();
             verify(refreshTokenRepository).save(token);
@@ -434,7 +436,11 @@ class AuthServiceTest {
             savedCredential.setEnabled(false);
 
             when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserId("valid-token")).thenReturn(savedCredential.getId().toString());
+            when(jwtService.extractExpiration("valid-token")).thenReturn(new java.util.Date(System.currentTimeMillis() + 60000));
+            when(tokenBlocklistService.isBlocked(anyString())).thenReturn(false);
             when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(savedCredential.getId());
+            when(sessionCacheService.getCachedSession(savedCredential.getId())).thenReturn(null);
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
 
             assertThatThrownBy(() -> authService.getCurrentUser("valid-token"))
@@ -448,7 +454,11 @@ class AuthServiceTest {
         @DisplayName("should return user profile for active user")
         void shouldReturnProfileForActiveUser() {
             when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserId("valid-token")).thenReturn(savedCredential.getId().toString());
+            when(jwtService.extractExpiration("valid-token")).thenReturn(new java.util.Date(System.currentTimeMillis() + 60000));
+            when(tokenBlocklistService.isBlocked(anyString())).thenReturn(false);
             when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(savedCredential.getId());
+            when(sessionCacheService.getCachedSession(savedCredential.getId())).thenReturn(null);
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
 
             UserDto fullProfile = new UserDto(
@@ -469,7 +479,11 @@ class AuthServiceTest {
         @DisplayName("should fall back to local credential when user-service is unavailable")
         void shouldFallBackToLocalCredential() {
             when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserId("valid-token")).thenReturn(savedCredential.getId().toString());
+            when(jwtService.extractExpiration("valid-token")).thenReturn(new java.util.Date(System.currentTimeMillis() + 60000));
+            when(tokenBlocklistService.isBlocked(anyString())).thenReturn(false);
             when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(savedCredential.getId());
+            when(sessionCacheService.getCachedSession(savedCredential.getId())).thenReturn(null);
             when(credentialRepository.findById(savedCredential.getId())).thenReturn(Optional.of(savedCredential));
             when(userServiceClient.getUserProfile(savedCredential.getId())).thenReturn(null);
 
@@ -495,7 +509,11 @@ class AuthServiceTest {
         void shouldThrowWhenUserNotFound() {
             UUID missingId = UUID.randomUUID();
             when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+            when(jwtService.extractUserId("valid-token")).thenReturn(missingId.toString());
+            when(jwtService.extractExpiration("valid-token")).thenReturn(new java.util.Date(System.currentTimeMillis() + 60000));
+            when(tokenBlocklistService.isBlocked(anyString())).thenReturn(false);
             when(jwtService.extractUserIdAsUUID("valid-token")).thenReturn(missingId);
+            when(sessionCacheService.getCachedSession(missingId)).thenReturn(null);
             when(credentialRepository.findById(missingId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.getCurrentUser("valid-token"))

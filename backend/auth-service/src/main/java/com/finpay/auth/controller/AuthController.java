@@ -64,8 +64,12 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response) {
         String refreshToken = extractRefreshTokenFromCookie(request);
+        String accessToken = extractAccessTokenFromCookie(request);
+        if (accessToken == null) {
+            accessToken = extractTokenFromHeader(request);
+        }
         if (refreshToken != null) {
-            authService.logout(refreshToken);
+            authService.logout(refreshToken, accessToken);
         }
         cookieService.clearAuthCookies(response);
         return ResponseEntity.ok(Map.of("message", "Successfully logged out"));

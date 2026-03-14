@@ -27,6 +27,7 @@ public class WalletService {
     private final WalletRepository walletRepository;
     private final WalletTransactionService transactionService;
     private final WalletMapper walletMapper;
+    private final WalletCacheService walletCacheService;
 
     private static final String DEFAULT_CURRENCY = "USD";
 
@@ -51,9 +52,16 @@ public class WalletService {
 
     @Transactional(readOnly = true)
     public WalletResponse getWalletByUserId(UUID userId) {
+        // Try Redis cache first
+        WalletResponse cached = walletCacheService.getCachedWallet(userId);
+        if (cached != null) {
+            return cached;
+        }
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for user: " + userId));
-        return walletMapper.toResponse(wallet);
+        WalletResponse response = walletMapper.toResponse(wallet);
+        walletCacheService.cacheWallet(userId, response);
+        return response;
     }
 
     public Wallet getWalletForUpdate(UUID userId) {
@@ -211,6 +219,7 @@ public class WalletService {
         Wallet wallet = getWalletForUpdate(userId);
         wallet.setStatus(Wallet.WalletStatus.FROZEN);
         walletRepository.save(wallet);
+        walletCacheService.evictWallet(userId);
         return walletMapper.toResponse(wallet);
     }
 
@@ -220,6 +229,7 @@ public class WalletService {
             throw new WalletException("Wallet is not frozen");
         wallet.setStatus(Wallet.WalletStatus.ACTIVE);
         walletRepository.save(wallet);
+        walletCacheService.evictWallet(userId);
         return walletMapper.toResponse(wallet);
     }
 
@@ -351,5 +361,7 @@ public class WalletService {
                                    String referenceId, String description) {
         transactionService.recordTransaction(wallet.getId(), wallet.getUserId(), type,
                 amount, balanceBefore, balanceAfter, wallet.getCurrency(), referenceId, description);
+        // Evict cached wallet so reads reflect the new balance
+        walletCacheService.evictWallet(wallet.getUserId());
     }
 }

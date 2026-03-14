@@ -6,6 +6,7 @@ import com.finpay.auth.config.KafkaConfig;
 import com.finpay.auth.entity.UserCredential;
 import com.finpay.auth.repository.RefreshTokenRepository;
 import com.finpay.auth.repository.UserCredentialRepository;
+import com.finpay.auth.service.UserSessionCacheService;
 import com.finpay.outbox.idempotency.IdempotentConsumerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class UserEventConsumer {
     private final RefreshTokenRepository refreshTokenRepository;
     private final ObjectMapper objectMapper;
     private final IdempotentConsumerService idempotentConsumer;
+    private final UserSessionCacheService sessionCacheService;
 
     @RetryableTopic(
             attempts = "4",
@@ -114,6 +116,9 @@ public class UserEventConsumer {
                 refreshTokenRepository.revokeAllByUserId(userId);
                 log.info("Revoked all refresh tokens for suspended user {}", userId);
             }
+
+            // Evict session cache so stale profile data isn't served
+            sessionCacheService.evictSession(userId);
         } else {
             log.debug("Credential enabled flag already correct for user {} (status={})", userId, newStatus);
         }
