@@ -56,10 +56,12 @@ export const handlers = [
         createMockUserSearchResult(),
         createMockUserSearchResult({ id: 'user-3', email: 'bob@example.com', firstName: 'Bob', lastName: 'Jones' }),
       ],
-      totalElements: 2,
-      totalPages: 1,
-      size: 5,
-      number: 0,
+      page: {
+        totalElements: 2,
+        totalPages: 1,
+        size: 5,
+        number: 0,
+      },
     }),
   ),
 
@@ -96,10 +98,12 @@ export const handlers = [
           status: 'PROCESSING',
         }),
       ],
-      totalElements: 2,
-      totalPages: 1,
-      size: 5,
-      number: 0,
+      page: {
+        totalElements: 2,
+        totalPages: 1,
+        size: 5,
+        number: 0,
+      },
     }),
   ),
 
@@ -117,30 +121,36 @@ export const handlers = [
   http.get(`${BASE_URL}/api/v1/payments/requests/user/:userId`, () =>
     HttpResponse.json({
       content: [],
-      totalElements: 0,
-      totalPages: 0,
-      size: 10,
-      number: 0,
+      page: {
+        totalElements: 0,
+        totalPages: 0,
+        size: 10,
+        number: 0,
+      },
     }),
   ),
 
   http.get(`${BASE_URL}/api/v1/payments/requests/pending/incoming`, () =>
     HttpResponse.json({
       content: [],
-      totalElements: 0,
-      totalPages: 0,
-      size: 10,
-      number: 0,
+      page: {
+        totalElements: 0,
+        totalPages: 0,
+        size: 10,
+        number: 0,
+      },
     }),
   ),
 
   http.get(`${BASE_URL}/api/v1/payments/requests/pending/outgoing`, () =>
     HttpResponse.json({
       content: [],
-      totalElements: 0,
-      totalPages: 0,
-      size: 10,
-      number: 0,
+      page: {
+        totalElements: 0,
+        totalPages: 0,
+        size: 10,
+        number: 0,
+      },
     }),
   ),
 
@@ -168,10 +178,12 @@ export const handlers = [
   http.get(`${BASE_URL}/api/v1/payments/bills/user/:userId`, () =>
     HttpResponse.json({
       content: [createMockBillPayment()],
-      totalElements: 1,
-      totalPages: 1,
-      number: 0,
-      size: 10,
+      page: {
+        totalElements: 1,
+        totalPages: 1,
+        number: 0,
+        size: 10,
+      },
     }),
   ),
 

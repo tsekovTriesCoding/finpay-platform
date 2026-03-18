@@ -61,10 +61,12 @@ export interface BillPayment {
 
 export interface BillPaymentPageResponse {
   content: BillPayment[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
+  page: {
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+  };
 }
 
 // Static biller catalogue (v1)

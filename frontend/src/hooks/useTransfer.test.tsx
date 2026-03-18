@@ -48,10 +48,12 @@ describe('useTransferHistory', () => {
       http.get(`${BASE_URL}/api/v1/payments/transfers/user/:userId`, () =>
         HttpResponse.json({
           content: [],
-          totalElements: 0,
-          totalPages: 0,
-          size: 5,
-          number: 0,
+          page: {
+            totalElements: 0,
+            totalPages: 0,
+            size: 5,
+            number: 0,
+          },
         }),
       ),
     );
@@ -87,10 +89,12 @@ describe('useTransferHistory', () => {
             createMockTransfer({ id: 't2', status: 'PROCESSING' }),
             createMockTransfer({ id: 't3', status: 'FAILED', failureReason: 'Insufficient funds' }),
           ],
-          totalElements: 3,
-          totalPages: 1,
-          size: 5,
-          number: 0,
+          page: {
+            totalElements: 3,
+            totalPages: 1,
+            size: 5,
+            number: 0,
+          },
         }),
       ),
     );
