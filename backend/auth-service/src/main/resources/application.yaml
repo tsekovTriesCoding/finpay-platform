@@ -16,6 +16,14 @@ spring:
     config:
       enabled: false
 
+    loadbalancer:
+      cache:
+        enabled: true
+        ttl: 35s
+        capacity: 256
+        caffeine:
+          spec: initialCapacity=64,expireAfterWrite=35s
+
   datasource:
     url: jdbc:mysql://localhost:3306/finpay_auth?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: ${MYSQL_USERNAME}

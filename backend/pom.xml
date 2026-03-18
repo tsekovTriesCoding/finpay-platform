@@ -148,6 +148,18 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
+        <!-- Spring Cache (provides CaffeineCacheManager for Spring Cloud LoadBalancer) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <!-- Caffeine Cache (high-performance cache for Spring Cloud LoadBalancer in production) -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- SpringDoc OpenAPI -->
         <dependency>
             <groupId>org.springdoc</groupId>
