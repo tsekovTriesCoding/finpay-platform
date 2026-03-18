@@ -10,10 +10,12 @@ export interface UserSearchResult {
 
 export interface UserSearchResponse {
   content: UserSearchResult[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+  page: {
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  };
 }
 
 export interface MoneyTransferRequest {
@@ -41,10 +43,12 @@ export interface MoneyTransfer {
 
 export interface TransferHistoryResponse {
   content: MoneyTransfer[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+  page: {
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  };
 }
 
 // Money Request types
@@ -88,10 +92,12 @@ export interface MoneyRequest {
 
 export interface MoneyRequestPageResponse {
   content: MoneyRequest[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+  page: {
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  };
 }
 
 export const paymentService = {

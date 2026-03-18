@@ -114,12 +114,12 @@ export function makePage<T>(content: T[], totalElements?: number) {
   const total = totalElements ?? content.length;
   return {
     content,
-    totalElements: total,
-    totalPages: Math.max(1, Math.ceil(total / 20)),
-    number: 0,
-    size: 20,
-    first: true,
-    last: total <= 20,
+    page: {
+      totalElements: total,
+      totalPages: Math.max(1, Math.ceil(total / 20)),
+      number: 0,
+      size: 20,
+    },
   };
 }
 

@@ -89,7 +89,7 @@ export default function RecentBillPayments({ userId, onTransactionSelect }: Rece
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-white">Recent Bill Payments</h2>
         <span className="text-xs text-dark-400">
-          {data?.totalElements ?? 0} total
+          {data?.page.totalElements ?? 0} total
         </span>
       </div>
 

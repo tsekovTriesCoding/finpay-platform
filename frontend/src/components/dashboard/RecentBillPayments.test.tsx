@@ -33,10 +33,12 @@ describe('RecentBillPayments', () => {
       http.get(`${BASE_URL}/api/v1/payments/bills/user/:userId`, () =>
         HttpResponse.json({
           content: [],
-          totalElements: 0,
-          totalPages: 0,
-          number: 0,
-          size: 10,
+          page: {
+            totalElements: 0,
+            totalPages: 0,
+            number: 0,
+            size: 10,
+          },
         }),
       ),
     );
@@ -93,10 +95,12 @@ describe('RecentBillPayments', () => {
           content: [
             createMockBillPayment({ category: 'INTERNET', billerName: 'FiberNet ISP' }),
           ],
-          totalElements: 1,
-          totalPages: 1,
-          number: 0,
-          size: 10,
+          page: {
+            totalElements: 1,
+            totalPages: 1,
+            number: 0,
+            size: 10,
+          },
         }),
       ),
     );

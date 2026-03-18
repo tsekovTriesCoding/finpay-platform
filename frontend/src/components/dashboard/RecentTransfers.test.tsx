@@ -47,10 +47,12 @@ describe('RecentTransfers', () => {
       http.get(`${BASE_URL}/api/v1/payments/transfers/user/:userId`, () =>
         HttpResponse.json({
           content: [],
-          totalElements: 0,
-          totalPages: 0,
-          size: 5,
-          number: 0,
+          page: {
+            totalElements: 0,
+            totalPages: 0,
+            size: 5,
+            number: 0,
+          },
         }),
       ),
     );
@@ -84,10 +86,12 @@ describe('RecentTransfers', () => {
             createMockTransfer({ status: 'COMPLETED' }),
             createMockTransfer({ id: 'transfer-2', status: 'PROCESSING' }),
           ],
-          totalElements: 2,
-          totalPages: 1,
-          size: 5,
-          number: 0,
+          page: {
+            totalElements: 2,
+            totalPages: 1,
+            size: 5,
+            number: 0,
+          },
         }),
       ),
     );

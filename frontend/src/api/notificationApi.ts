@@ -70,10 +70,12 @@ export interface NotificationPreferencesRequest {
 
 export interface NotificationPage {
   content: Notification[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+  page: {
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  };
 }
 
 export const notificationService = {

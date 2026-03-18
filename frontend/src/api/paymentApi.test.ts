@@ -24,10 +24,12 @@ describe('paymentService', () => {
         http.get(`${BASE_URL}/api/v1/users/search`, () =>
           HttpResponse.json({
             content: [],
-            totalElements: 0,
-            totalPages: 0,
-            size: 5,
-            number: 0,
+            page: {
+              totalElements: 0,
+              totalPages: 0,
+              size: 5,
+              number: 0,
+            },
           }),
         ),
       );
@@ -56,7 +58,7 @@ describe('paymentService', () => {
       const history = await paymentService.getTransferHistory('user-1');
 
       expect(history.content).toHaveLength(2);
-      expect(history.totalElements).toBe(2);
+      expect(history.page.totalElements).toBe(2);
     });
   });
 

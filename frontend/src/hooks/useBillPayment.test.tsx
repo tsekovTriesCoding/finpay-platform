@@ -66,10 +66,12 @@ describe('useBillPayments', () => {
             createMockBillPayment({ id: 'b2', category: 'WATER', billerName: 'Metro Water' }),
             createMockBillPayment({ id: 'b3', category: 'INTERNET', billerName: 'FiberNet ISP' }),
           ],
-          totalElements: 3,
-          totalPages: 1,
-          number: 0,
-          size: 10,
+          page: {
+            totalElements: 3,
+            totalPages: 1,
+            number: 0,
+            size: 10,
+          },
         }),
       ),
     );
@@ -95,10 +97,12 @@ describe('useBillPayments', () => {
         capturedSize = url.searchParams.get('size');
         return HttpResponse.json({
           content: [],
-          totalElements: 0,
-          totalPages: 0,
-          number: 2,
-          size: 20,
+          page: {
+            totalElements: 0,
+            totalPages: 0,
+            number: 2,
+            size: 20,
+          },
         });
       }),
     );

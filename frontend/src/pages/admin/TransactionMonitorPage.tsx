@@ -201,8 +201,8 @@ export default function TransactionMonitorPage() {
       <DataTable<AdminTransaction>
         data={data?.content ?? []}
         columns={columns}
-        pageCount={data?.totalPages ?? 0}
-        totalElements={data?.totalElements ?? 0}
+        pageCount={data?.page.totalPages ?? 0}
+        totalElements={data?.page.totalElements ?? 0}
         pagination={pagination}
         onPaginationChange={setPagination}
         sorting={sorting}
