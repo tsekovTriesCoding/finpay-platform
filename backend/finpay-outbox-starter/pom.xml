@@ -45,12 +45,6 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <!-- Jackson (for ObjectMapper & JavaTimeModule) -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -60,25 +54,12 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Spring Retry (for @RetryableTopic support in retry config) -->
-        <dependency>
-            <groupId>org.springframework.retry</groupId>
-            <artifactId>spring-retry</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <!--
-                Do NOT apply spring-boot-maven-plugin here — this is a library,
+                Do NOT apply spring-boot-maven-plugin here - this is a library,
                 not a runnable application.  The parent pluginManagement defines
                 it, but we override by omitting it.
             -->
