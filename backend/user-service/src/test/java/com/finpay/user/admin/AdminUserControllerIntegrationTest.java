@@ -104,7 +104,7 @@ class AdminUserControllerIntegrationTest {
             assertThat(result).bodyJson()
                     .extractingPath("$.content.length()").isEqualTo(3);
             assertThat(result).bodyJson()
-                    .extractingPath("$.totalElements").isEqualTo(3);
+                    .extractingPath("$.page.totalElements").isEqualTo(3);
         }
 
         @Test
@@ -191,9 +191,9 @@ class AdminUserControllerIntegrationTest {
             assertThat(result).bodyJson()
                     .extractingPath("$.content.length()").isEqualTo(2);
             assertThat(result).bodyJson()
-                    .extractingPath("$.totalElements").isEqualTo(5);
+                    .extractingPath("$.page.totalElements").isEqualTo(5);
             assertThat(result).bodyJson()
-                    .extractingPath("$.totalPages").isEqualTo(3);
+                    .extractingPath("$.page.totalPages").isEqualTo(3);
         }
 
         @Test
@@ -207,7 +207,7 @@ class AdminUserControllerIntegrationTest {
             assertThat(result).bodyJson()
                     .extractingPath("$.content.length()").isEqualTo(0);
             assertThat(result).bodyJson()
-                    .extractingPath("$.totalElements").isEqualTo(0);
+                    .extractingPath("$.page.totalElements").isEqualTo(0);
         }
     }
 

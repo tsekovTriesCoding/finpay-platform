@@ -246,9 +246,9 @@ class AdminTransactionControllerIntegrationTest {
             assertThat(result).bodyJson()
                     .extractingPath("$.content.length()").isEqualTo(2);
             assertThat(result).bodyJson()
-                    .extractingPath("$.totalElements").isEqualTo(5);
+                    .extractingPath("$.page.totalElements").isEqualTo(5);
             assertThat(result).bodyJson()
-                    .extractingPath("$.totalPages").isEqualTo(3);
+                    .extractingPath("$.page.totalPages").isEqualTo(3);
         }
 
         @Test

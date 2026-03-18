@@ -259,7 +259,7 @@ class NotificationControllerIntegrationTest {
             assertThat(result).bodyJson()
                     .extractingPath("$.content.length()").isEqualTo(3);
             assertThat(result).bodyJson()
-                    .extractingPath("$.totalElements").isEqualTo(5);
+                    .extractingPath("$.page.totalElements").isEqualTo(5);
         }
 
         @Test
