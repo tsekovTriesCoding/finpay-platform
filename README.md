@@ -1,11 +1,11 @@
 # FinPay Platform
 
 ![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-brightgreen?style=flat-square&logo=springboot&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.3-brightgreen?style=flat-square&logo=springboot&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Apache Kafka](https://img.shields.io/badge/Kafka-KRaft-231F20?style=flat-square&logo=apachekafka&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?style=flat-square&logo=mysql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
@@ -100,20 +100,20 @@ graph TB
 ### Backend
 | Layer | Technology |
 |-------|-----------|
-| Framework | Spring Boot 4.0.2, Spring Cloud 2025.1.0 |
+| Framework | Spring Boot 4.0.3, Spring Cloud 2025.1.1 |
 | Language | Java 25 |
 | Database | MySQL 8.0 (database-per-service) |
 | Messaging | Apache Kafka (KRaft mode, no Zookeeper) |
 | Caching | Redis 7 (sessions, rate limiting, idempotency, analytics) |
-| Auth | JWT (JJWT 0.12.6), OAuth2 (Google, GitHub), BCrypt, HTTP-only cookies |
-| API Docs | SpringDoc OpenAPI 2.8.6, aggregated at the gateway |
+| Auth | JWT (JJWT 0.12.7), OAuth2 (Google, GitHub), BCrypt, HTTP-only cookies |
+| API Docs | SpringDoc OpenAPI 3.0.2, aggregated at the gateway |
 | Resilience | Resilience4j circuit breakers, Spring Retry with exponential backoff |
 | Mapping | MapStruct 1.6.3, Lombok |
 | Tracing | OpenTelemetry + Zipkin (100% sampling) |
 | Metrics | Micrometer → Prometheus → Grafana |
 | Email | Spring Mail + Thymeleaf HTML templates |
-| Image Upload | Cloudinary 2.0.0 |
-| Testing | JUnit 5, Testcontainers 2.0.0 (MySQL, Kafka, Redis) |
+| Image Upload | Cloudinary 2.3.2 |
+| Testing | JUnit 5, Testcontainers 2.0.3 (MySQL, Kafka, Redis) |
 
 ### Frontend
 | Layer | Technology |
